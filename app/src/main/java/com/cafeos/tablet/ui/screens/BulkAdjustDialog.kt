@@ -33,7 +33,7 @@ fun BulkAdjustDialog(
         onDismissRequest = onDismiss,
         title = { Text("Bulk Adjust Stock", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.height(460.dp)) {
+            Column(modifier = Modifier.heightIn(max = 460.dp)) {
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },

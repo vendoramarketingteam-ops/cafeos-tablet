@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -74,6 +75,7 @@ fun POSScreen(
     val selectedTableId by viewModel.selectedTableId.collectAsState()
 
     var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
+    var compactPane by rememberSaveable { mutableStateOf(0) }
     var optionGroups by remember { mutableStateOf<List<com.cafeos.tablet.data.OptionGroup>>(emptyList()) }
     var groupOptions by remember { mutableStateOf<Map<Int, List<com.cafeos.tablet.data.Option>>>(emptyMap()) }
 
@@ -112,50 +114,89 @@ fun POSScreen(
         products.filter { it.available && it.categoryId == selectedCategoryId && it.name.contains(searchQuery, ignoreCase = true) }
     }
 
-    // ── Responsive layout: Row on tablet/landscape, stacked Column on portrait phone ──
     if (isPortraitPhone) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // ── Menu (top 65 % — scrollable product grid) ──
-            Column(
-                modifier = Modifier
-                    .weight(2f)
-                    .background(PosCoffee)
-                    .padding(Dimens.space16)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(PosCoffee)
+        ) {
+            Surface(
+                color = PosCoffeeLight,
+                shadowElevation = Dimens.elevationLow,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                PosMenuContent(
-                    viewModel = viewModel,
-                    products = products,
-                    categories = categories,
-                    searchQuery = searchQuery,
-                    onSearchChange = { searchQuery = it },
-                    selectedCategoryId = selectedCategoryId,
-                    onCategorySelected = { selectedCategoryId = it },
-                    filteredProducts = filteredProducts,
-                    currencyFormatter = currencyFormatter,
-                    todayOrderCount = todayOrderCount,
-                    businessSettings = businessSettings,
-                    onNavigateToLoyalty = onNavigateToLoyalty,
-                    onNavigateToItemShop = onNavigateToItemShop
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = Dimens.space12, vertical = Dimens.space8),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.space8)
+                ) {
+                    FilledTonalButton(
+                        onClick = { compactPane = 0 },
+                        modifier = Modifier.weight(1f).heightIn(min = Dimens.touchMin),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = if (compactPane == 0) PosAccentSoft else PosSurface,
+                            contentColor = if (compactPane == 0) PosAccent else PosInkSoft
+                        )
+                    ) {
+                        Icon(Icons.Default.Storefront, contentDescription = null)
+                        Spacer(Modifier.width(Dimens.space8))
+                        Text("Menu")
+                    }
+                    FilledTonalButton(
+                        onClick = { compactPane = 1 },
+                        modifier = Modifier.weight(1f).heightIn(min = Dimens.touchMin),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = if (compactPane == 1) PosAccentSoft else PosSurface,
+                            contentColor = if (compactPane == 1) PosAccent else PosInkSoft
+                        )
+                    ) {
+                        Icon(Icons.Default.ShoppingBag, contentDescription = null)
+                        Spacer(Modifier.width(Dimens.space8))
+                        Text("Order (${cartItems.sumOf { it.quantity }})", maxLines = 1)
+                    }
+                }
             }
-            // ── Cart (bottom 35 %) ──
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .background(PosSurface)
-            ) {
-                PosCartContent(
-                    viewModel = viewModel,
-                    tables = tables,
-                    cartItems = cartItems,
-                    currencyFormatter = currencyFormatter,
-                    totalAmount = totalAmount,
-                    selectedTableId = selectedTableId,
-                    quotaTarget = quotaTarget,
-                    quotaMode = quotaMode,
-                    quotaCurrent = quotaCurrent
-                )
+            if (compactPane == 0) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(Dimens.space12)
+                ) {
+                    PosMenuContent(
+                        viewModel = viewModel,
+                        products = products,
+                        categories = categories,
+                        searchQuery = searchQuery,
+                        onSearchChange = { searchQuery = it },
+                        selectedCategoryId = selectedCategoryId,
+                        onCategorySelected = { selectedCategoryId = it },
+                        filteredProducts = filteredProducts,
+                        currencyFormatter = currencyFormatter,
+                        todayOrderCount = todayOrderCount,
+                        businessSettings = businessSettings,
+                        onNavigateToLoyalty = onNavigateToLoyalty,
+                        onNavigateToItemShop = onNavigateToItemShop
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(PosSurface)
+                        .padding(Dimens.space12)
+                ) {
+                    PosCartContent(
+                        viewModel = viewModel,
+                        tables = tables,
+                        cartItems = cartItems,
+                        currencyFormatter = currencyFormatter,
+                        totalAmount = totalAmount,
+                        selectedTableId = selectedTableId,
+                        quotaTarget = quotaTarget,
+                        quotaMode = quotaMode,
+                        quotaCurrent = quotaCurrent
+                    )
+                }
             }
         }
     } else {
@@ -215,6 +256,7 @@ fun POSScreen(
             onConfirm = { selectedOptions, priceDelta ->
                 viewModel.addToCart(product, selectedOptions, priceDelta)
                 viewModel.closeProductOptions()
+                if (isPortraitPhone) compactPane = 1
             }
         )
     }
@@ -257,6 +299,7 @@ private fun PosMenuContent(
     onNavigateToLoyalty: () -> Unit,
     onNavigateToItemShop: () -> Unit,
 ) {
+    val compact = LocalConfiguration.current.screenWidthDp < Dimens.tabletBreakpoint.value
     Column(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
     // Header
     Row(
@@ -270,7 +313,9 @@ private fun PosMenuContent(
             color = PosInk
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.space8)) {
-            Text("$todayOrderCount served today", style = MaterialTheme.typography.labelMedium, color = PosInkSoft)
+            if (!compact) {
+                Text("$todayOrderCount served today", style = MaterialTheme.typography.labelMedium, color = PosInkSoft)
+            }
             GemCounter(
                 count = todayOrderCount,
                 onClick = onNavigateToLoyalty
@@ -341,7 +386,7 @@ private fun PosMenuContent(
     Spacer(modifier = Modifier.height(Dimens.space16))
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 160.dp),
+        columns = GridCells.Adaptive(minSize = if (compact) 136.dp else 160.dp),
         contentPadding = PaddingValues(Dimens.space4),
         horizontalArrangement = Arrangement.spacedBy(Dimens.space12),
         verticalArrangement = Arrangement.spacedBy(Dimens.space12),
@@ -602,20 +647,20 @@ fun CartItemRow(item: CartItem, formatter: NumberFormat, viewModel: CafeViewMode
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = { viewModel.updateCartItemQuantity(item, item.quantity - 1) },
-                    modifier = Modifier.size(Dimens.space32)
+                    modifier = Modifier.size(Dimens.touchMin)
                 ) {
                     Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = PosInkSoft, modifier = Modifier.size(Dimens.space16))
                 }
                 StackCounter(quantity = item.quantity, modifier = Modifier.padding(horizontal = Dimens.space4))
                 IconButton(
                     onClick = { viewModel.updateCartItemQuantity(item, item.quantity + 1) },
-                    modifier = Modifier.size(Dimens.space32)
+                    modifier = Modifier.size(Dimens.touchMin)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Increase", tint = PosInk, modifier = Modifier.size(Dimens.space16))
                 }
                 IconButton(
                     onClick = { viewModel.removeFromCart(item) },
-                    modifier = Modifier.size(Dimens.space32)
+                    modifier = Modifier.size(Dimens.touchMin)
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = "Remove", tint = PosDanger, modifier = Modifier.size(Dimens.space16))
                 }

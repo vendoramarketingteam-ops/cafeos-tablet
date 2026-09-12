@@ -57,7 +57,10 @@ fun OrderHistoryScreen(viewModel: CafeViewModel) {
         PremiumHeader(
             "Order History",
             action = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                ) {
                     OutlinedButton(onClick = { templateLauncher.launch("order-history-template.csv") }) { Text("Template") }
                     OutlinedButton(onClick = { importLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel")) }) { Text("Import") }
                     Button(onClick = { exportLauncher.launch("order-history.csv") }, colors = ButtonDefaults.buttonColors(containerColor = PosAccent)) { Text("Export") }

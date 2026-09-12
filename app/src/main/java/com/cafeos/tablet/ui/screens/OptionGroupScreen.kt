@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.*
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
@@ -44,8 +45,10 @@ fun OptionGroupScreen(viewModel: CafeViewModel) {
     }
 
     PremiumScreen {
-        Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Option Groups", style = MaterialTheme.typography.headlineMedium, color = PosInk)
+        PremiumHeader(
+            title = "Option Groups",
+            subtitle = "Organize modifiers and ingredient choices",
+            action = {
             Button(
                 onClick = { editingGroup = null; showCreateDialog = true },
                 shape = RoundedCornerShape(12.dp),
@@ -55,9 +58,8 @@ fun OptionGroupScreen(viewModel: CafeViewModel) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Add Group")
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+            }
+        )
 
         LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(optionGroups) { group ->

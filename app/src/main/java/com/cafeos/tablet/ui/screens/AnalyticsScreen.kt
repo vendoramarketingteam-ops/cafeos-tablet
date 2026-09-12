@@ -21,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import com.cafeos.tablet.data.*
@@ -106,6 +108,7 @@ fun AnalyticsScreen(viewModel: CafeViewModel) {
     var isLoading by remember { mutableStateOf(true) }
     val formatter = NumberFormat.getCurrencyInstance(Locale("en", "PH"))
     val inventorySummary = remember(ingredients) { StockSummaryRule.summarize(ingredients) }
+    val compact = LocalConfiguration.current.screenWidthDp < Dimens.tabletBreakpoint.value
     val now = System.currentTimeMillis()
     val start = when (range) {
         "TODAY" -> Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
@@ -193,12 +196,24 @@ fun AnalyticsScreen(viewModel: CafeViewModel) {
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    KpiCard(Modifier.weight(1f), "Total Sales", metrics?.totalRevenue ?: 0.0, formatter, Icons.Default.AttachMoney, PosAccent)
+                    if (compact) {
+                        KpiCard(Modifier.fillMaxWidth(), "Total Sales", metrics?.totalRevenue ?: 0.0, formatter, Icons.Default.AttachMoney, PosAccent)
+                        KpiCard(Modifier.fillMaxWidth(), "Gross Profit", metrics?.grossProfit ?: 0.0, formatter, Icons.Default.TrendingUp, PosAccent)
+                        KpiCard(Modifier.fillMaxWidth(), "Net Profit", metrics?.netProfit ?: 0.0, formatter, Icons.Default.AccountBalance, PosGold)
+                        KpiCard(Modifier.fillMaxWidth(), "COGS", metrics?.totalCOGS ?: 0.0, formatter, Icons.Default.Inventory, PosDanger)
+                        KpiCard(Modifier.fillMaxWidth(), "Total Orders", visibleOrders.size.toDouble(), NumberFormat.getIntegerInstance(), Icons.Default.ReceiptLong, PosGold)
+                        KpiCard(Modifier.fillMaxWidth(), "Avg Order", if (visibleOrders.isEmpty()) 0.0 else visibleOrders.sumOf { it.totalAmount } / visibleOrders.size, formatter, Icons.Default.TrendingUp, PosAccent)
+                        if (settings?.dailyQuotaTarget ?: 0.0 > 0.0) {
+                            val achieved = if (settings?.dailyQuotaMode == "REVENUE") visibleOrders.sumOf { it.totalAmount } else rangeProductUnits.toDouble()
+                            KpiCard(Modifier.fillMaxWidth(), "Daily Quota", achieved, if (settings?.dailyQuotaMode == "REVENUE") formatter else NumberFormat.getIntegerInstance(), Icons.Default.Flag, PosGold)
+                        }
+                    } else {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            KpiCard(Modifier.weight(1f), "Total Sales", metrics?.totalRevenue ?: 0.0, formatter, Icons.Default.AttachMoney, PosAccent)
                             KpiCard(Modifier.weight(1f), "Gross Profit", metrics?.grossProfit ?: 0.0, formatter, Icons.Default.TrendingUp, PosAccent)
                             KpiCard(Modifier.weight(1f), "Net Profit", metrics?.netProfit ?: 0.0, formatter, Icons.Default.AccountBalance, PosGold)
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             KpiCard(Modifier.weight(1f), "COGS", metrics?.totalCOGS ?: 0.0, formatter, Icons.Default.Inventory, PosDanger)
                             KpiCard(Modifier.weight(1f), "Total Orders", visibleOrders.size.toDouble(), NumberFormat.getIntegerInstance(), Icons.Default.ReceiptLong, PosGold)
                             KpiCard(Modifier.weight(1f), "Avg Order", if (visibleOrders.isEmpty()) 0.0 else visibleOrders.sumOf { it.totalAmount } / visibleOrders.size, formatter, Icons.Default.TrendingUp, PosAccent)
@@ -206,6 +221,7 @@ fun AnalyticsScreen(viewModel: CafeViewModel) {
                                 val achieved = if (settings?.dailyQuotaMode == "REVENUE") visibleOrders.sumOf { it.totalAmount } else rangeProductUnits.toDouble()
                                 KpiCard(Modifier.weight(1f), "Daily Quota", achieved, if (settings?.dailyQuotaMode == "REVENUE") formatter else NumberFormat.getIntegerInstance(), Icons.Default.Flag, PosGold)
                             }
+                        }
                     }
                 }
             }
@@ -216,9 +232,16 @@ fun AnalyticsScreen(viewModel: CafeViewModel) {
                 AnalyticsQuotaPanel(quotaValue, quotaTarget, quotaMode, formatter)
             }
             item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    KpiCard(Modifier.weight(1f), "Operating Expenses", metrics?.totalExpenses ?: 0.0, formatter, Icons.Default.Receipt, PosDanger)
-                    KpiCard(Modifier.weight(1f), "Profit Margin", if ((metrics?.totalRevenue ?: 0.0) > 0.0) ((metrics?.netProfit ?: 0.0) / (metrics?.totalRevenue ?: 1.0) * 100.0) else 0.0, NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }, Icons.Default.Percent, PosAccent)
+                if (compact) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        KpiCard(Modifier.fillMaxWidth(), "Operating Expenses", metrics?.totalExpenses ?: 0.0, formatter, Icons.Default.Receipt, PosDanger)
+                        KpiCard(Modifier.fillMaxWidth(), "Profit Margin", if ((metrics?.totalRevenue ?: 0.0) > 0.0) ((metrics?.netProfit ?: 0.0) / (metrics?.totalRevenue ?: 1.0) * 100.0) else 0.0, NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }, Icons.Default.Percent, PosAccent)
+                    }
+                } else {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        KpiCard(Modifier.weight(1f), "Operating Expenses", metrics?.totalExpenses ?: 0.0, formatter, Icons.Default.Receipt, PosDanger)
+                        KpiCard(Modifier.weight(1f), "Profit Margin", if ((metrics?.totalRevenue ?: 0.0) > 0.0) ((metrics?.netProfit ?: 0.0) / (metrics?.totalRevenue ?: 1.0) * 100.0) else 0.0, NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }, Icons.Default.Percent, PosAccent)
+                    }
                 }
             }
             item {
@@ -235,9 +258,16 @@ fun AnalyticsScreen(viewModel: CafeViewModel) {
                 ReportPanel("Peak Hours") { BarChart(values = salesByHour, color = PosGold) }
             }
             item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ReportPanel(Modifier.weight(1f), "Mode of Payment") { HorizontalBarChart(paymentMix.toList(), formatter, PosAccent) }
-                    ReportPanel(Modifier.weight(1f), "Peak Days") { HorizontalBarChart(peakDays, formatter, PosGold) }
+                if (compact) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        ReportPanel("Mode of Payment") { HorizontalBarChart(paymentMix.toList(), formatter, PosAccent) }
+                        ReportPanel("Peak Days") { HorizontalBarChart(peakDays, formatter, PosGold) }
+                    }
+                } else {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        ReportPanel(Modifier.weight(1f), "Mode of Payment") { HorizontalBarChart(paymentMix.toList(), formatter, PosAccent) }
+                        ReportPanel(Modifier.weight(1f), "Peak Days") { HorizontalBarChart(peakDays, formatter, PosGold) }
+                    }
                 }
             }
             item {
@@ -280,13 +310,17 @@ private fun KpiCard(modifier: Modifier, label: String, value: Double, formatter:
         Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(color = accent.copy(alpha = .13f), shape = RoundedCornerShape(8.dp)) { Icon(icon, null, tint = accent, modifier = Modifier.padding(7.dp).size(16.dp)) }
             Spacer(Modifier.width(8.dp))
-            Column { Text(formatter.format(value), color = PosInk, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(label, color = PosInkSoft, style = MaterialTheme.typography.labelSmall) }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(formatter.format(value), color = PosInk, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(label, color = PosInkSoft, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
 
 @Composable
 private fun AnalyticsQuotaPanel(current: Double, target: Double, mode: String, formatter: NumberFormat) {
+    val compact = LocalConfiguration.current.screenWidthDp < Dimens.tabletBreakpoint.value
     ReportPanel("Daily Quota") {
         if (target <= 0.0) {
             Text("No daily quota configured. Set one in Settings > Business.", color = PosInkSoft, style = MaterialTheme.typography.bodyMedium)
@@ -297,7 +331,7 @@ private fun AnalyticsQuotaPanel(current: Double, target: Double, mode: String, f
                 progress >= 0.5f -> PosAccent
                 else -> PosInkSoft
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            if (compact) {
                 Column {
                     Text(if (mode == "REVENUE") formatter.format(current) else "${current.toInt()} products", color = PosInk, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text("of ${if (mode == "REVENUE") formatter.format(target) else "${target.toInt()} products"}", color = PosInkSoft, style = MaterialTheme.typography.bodySmall)
@@ -306,6 +340,18 @@ private fun AnalyticsQuotaPanel(current: Double, target: Double, mode: String, f
                     Icon(Icons.Default.Star, contentDescription = "gem", tint = if (progress >= 0.95f) PosGold else PosInkSoft, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(if (progress >= 1f) "Reached" else "${(progress * 100).toInt()}% to legend", color = barTint, fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Text(if (mode == "REVENUE") formatter.format(current) else "${current.toInt()} products", color = PosInk, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("of ${if (mode == "REVENUE") formatter.format(target) else "${target.toInt()} products"}", color = PosInkSoft, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Star, contentDescription = "gem", tint = if (progress >= 0.95f) PosGold else PosInkSoft, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (progress >= 1f) "Reached" else "${(progress * 100).toInt()}% to legend", color = barTint, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -321,7 +367,7 @@ private fun ReportPanel(title: String, onExport: () -> Unit = {}, content: @Comp
 @Composable
 private fun ReportPanel(modifier: Modifier, title: String, onExport: () -> Unit = {}, content: @Composable ColumnScope.() -> Unit) {
     GameCard(modifier = modifier, rarity = Rarity.RARE) {
-        Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(title, color = PosInk, fontWeight = FontWeight.Bold); IconButton(onClick = onExport, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.FileDownload, "Export", tint = PosInkSoft, modifier = Modifier.size(16.dp)) } }; Spacer(Modifier.height(10.dp)); content() }
+        Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text(title, color = PosInk, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)); IconButton(onClick = onExport, modifier = Modifier.size(Dimens.touchMin)) { Icon(Icons.Default.FileDownload, "Export", tint = PosInkSoft, modifier = Modifier.size(18.dp)) } }; Spacer(Modifier.height(10.dp)); content() }
     }
 }
 
@@ -458,7 +504,7 @@ private fun HorizontalBarChart(data: List<Pair<String, Double>>, formatter: Numb
         data.forEach { (label, value) ->
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(label, color = PosInk, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                    Text(label, color = PosInk, style = MaterialTheme.typography.bodyMedium, maxLines = 1, modifier = Modifier.weight(1f))
                     Text(formatter.format(value), color = color, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                 }
                 LinearProgressIndicator(progress = (value / max).toFloat().coerceIn(0f, 1f), modifier = Modifier.fillMaxWidth().height(7.dp), color = color, trackColor = PosMuted.copy(alpha = .3f))

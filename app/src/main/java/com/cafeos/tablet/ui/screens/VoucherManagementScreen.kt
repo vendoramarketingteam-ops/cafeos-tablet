@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.LoyaltyVoucher
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
@@ -37,12 +38,10 @@ fun VoucherManagementScreen(viewModel: CafeViewModel) {
     val scope = rememberCoroutineScope()
 
     PremiumScreen {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Loyalty Vouchers", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
+        PremiumHeader(
+            title = "Loyalty Vouchers",
+            subtitle = "Create rewards that keep guests coming back",
+            action = {
             Button(
                 onClick = { editingVoucher = null; showAddDialog = true },
                 shape = RoundedCornerShape(12.dp),
@@ -52,9 +51,8 @@ fun VoucherManagementScreen(viewModel: CafeViewModel) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Add Voucher", fontWeight = FontWeight.SemiBold)
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+            }
+        )
 
         LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(vouchers) { voucher ->

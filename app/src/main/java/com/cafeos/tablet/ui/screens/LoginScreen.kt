@@ -4,7 +4,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
@@ -14,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -35,11 +38,12 @@ fun LoginScreen(viewModel: CafeViewModel, onLoginSuccess: (Staff) -> Unit) {
         checking = false
     }
 
+    val compact = LocalConfiguration.current.screenWidthDp < Dimens.tabletBreakpoint.value
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(PosCoffee)
-            .padding(32.dp),
+            .padding(if (compact) Dimens.space16 else Dimens.space32),
         contentAlignment = Alignment.Center
     ) {
         when {
@@ -69,7 +73,8 @@ private fun LoginCard(
 
     Card(
         modifier = Modifier
-            .width(420.dp)
+            .fillMaxWidth()
+            .widthIn(max = 420.dp)
             .then(
                 if (isClassic()) Modifier else Modifier.border(
                     width = if (isGamified()) 2.dp else 1.dp,
@@ -85,7 +90,8 @@ private fun LoginCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(Dimens.space24)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -180,7 +186,8 @@ private fun SetupAdminCard(
 
     Card(
         modifier = Modifier
-            .width(420.dp)
+            .fillMaxWidth()
+            .widthIn(max = 420.dp)
             .then(
                 if (isClassic()) Modifier else Modifier.border(
                     width = if (isGamified()) 2.dp else 1.dp,
@@ -196,7 +203,8 @@ private fun SetupAdminCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(Dimens.space24)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
