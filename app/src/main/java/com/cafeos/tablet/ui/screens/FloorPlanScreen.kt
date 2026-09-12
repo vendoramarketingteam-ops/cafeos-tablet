@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -131,13 +134,11 @@ fun TableCard(table: CafeTable, session: TableSession?, isOccupied: Boolean, onC
     val statusColor = if (isOccupied) PosDanger else PosAccent
     val bgColor = if (isOccupied) PosDangerSoft else PosCoffeeLight
 
-    Card(
+    GameCard(
+        rarity = Rarity.COMMON,
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = bgColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

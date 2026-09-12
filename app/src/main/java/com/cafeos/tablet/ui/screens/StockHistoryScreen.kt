@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -100,10 +103,9 @@ fun StockHistoryScreen(viewModel: CafeViewModel) {
             items(filteredTx) { txn ->
                 val ing = ingrMap[txn.ingredientId]
                 val isInbound = txn.quantity > 0
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                GameCard(
+                    rarity = Rarity.COMMON,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(

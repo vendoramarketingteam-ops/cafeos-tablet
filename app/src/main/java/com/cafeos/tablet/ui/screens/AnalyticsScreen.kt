@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -45,11 +48,9 @@ import com.cafeos.tablet.ui.components.PremiumScreen
 /** Inventory health summary in Analytics (spec 014, US5): threshold-driven counts + stock value. */
 @Composable
 fun InventoryHealthPanel(summary: StockSummary, formatter: NumberFormat) {
-    Card(
+    GameCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        rarity = if (summary.out > 0 || summary.low > 0) Rarity.RARE else Rarity.COMMON
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text("Inventory Health", style = MaterialTheme.typography.titleMedium, color = PosPaper, fontWeight = FontWeight.Bold)
@@ -266,9 +267,16 @@ fun AnalyticsScreen(viewModel: CafeViewModel) {
     }
 }
 
+/** Maps a KPI's accent color to a Mobile Legends item-tier rarity (stat-orb tint). */
+private fun rarityOf(accent: Color): Rarity = when (accent) {
+    PosGold -> Rarity.EPIC
+    PosDanger -> Rarity.COMMON
+    else -> Rarity.RARE
+}
+
 @Composable
 private fun KpiCard(modifier: Modifier, label: String, value: Double, formatter: NumberFormat, icon: androidx.compose.ui.graphics.vector.ImageVector, accent: Color) {
-    Card(modifier, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(PosSurface), elevation = CardDefaults.cardElevation(2.dp)) {
+    GameCard(modifier = modifier, rarity = rarityOf(accent)) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(color = accent.copy(alpha = .13f), shape = RoundedCornerShape(8.dp)) { Icon(icon, null, tint = accent, modifier = Modifier.padding(7.dp).size(16.dp)) }
             Spacer(Modifier.width(8.dp))
@@ -284,15 +292,24 @@ private fun AnalyticsQuotaPanel(current: Double, target: Double, mode: String, f
             Text("No daily quota configured. Set one in Settings > Business.", color = PosInkSoft, style = MaterialTheme.typography.bodyMedium)
         } else {
             val progress = (current / target).coerceIn(0.0, 1.0).toFloat()
+            val barTint = when {
+                progress >= 0.95f -> PosGold
+                progress >= 0.5f -> PosAccent
+                else -> PosInkSoft
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
                     Text(if (mode == "REVENUE") formatter.format(current) else "${current.toInt()} products", color = PosInk, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text("of ${if (mode == "REVENUE") formatter.format(target) else "${target.toInt()} products"}", color = PosInkSoft, style = MaterialTheme.typography.bodySmall)
                 }
-                Text(if (progress >= 1f) "Reached" else "${(progress * 100).toInt()}%", color = if (progress >= 1f) PosAccent else PosGold, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Star, contentDescription = "gem", tint = if (progress >= 0.95f) PosGold else PosInkSoft, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(if (progress >= 1f) "Reached" else "${(progress * 100).toInt()}% to legend", color = barTint, fontWeight = FontWeight.Bold)
+                }
             }
             Spacer(Modifier.height(8.dp))
-            LinearProgressIndicator(progress = progress, modifier = Modifier.fillMaxWidth().height(8.dp), color = if (progress >= 1f) PosAccent else PosGold, trackColor = PosBorder)
+            LinearProgressIndicator(progress = progress, modifier = Modifier.fillMaxWidth().height(10.dp), color = barTint, trackColor = PosBorder)
             Text(if (progress >= 1f) "Daily target reached." else "${if (mode == "REVENUE") formatter.format((target - current).coerceAtLeast(0.0)) else "${(target - current).coerceAtLeast(0.0).toInt()} products"} remaining", color = PosInkSoft, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 6.dp))
         }
     }
@@ -303,7 +320,7 @@ private fun ReportPanel(title: String, onExport: () -> Unit = {}, content: @Comp
 
 @Composable
 private fun ReportPanel(modifier: Modifier, title: String, onExport: () -> Unit = {}, content: @Composable ColumnScope.() -> Unit) {
-    Card(modifier, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(PosSurface), elevation = CardDefaults.cardElevation(2.dp)) {
+    GameCard(modifier = modifier, rarity = Rarity.RARE) {
         Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(title, color = PosInk, fontWeight = FontWeight.Bold); IconButton(onClick = onExport, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.FileDownload, "Export", tint = PosInkSoft, modifier = Modifier.size(16.dp)) } }; Spacer(Modifier.height(10.dp)); content() }
     }
 }
@@ -345,13 +362,18 @@ private fun BarChart(values: List<Double>, color: Color) {
             values.forEachIndexed { index, value ->
                 val width = size.width / values.size
                 val height = (value / max * size.height * .88f * progress).toFloat()
-                drawRoundRect(color, Offset(index * width + width * .18f, size.height - height), androidx.compose.ui.geometry.Size(width * .64f, height), androidx.compose.ui.geometry.CornerRadius(5f))
+                val barTint = if (value >= max) PosGold else color
+                drawRoundRect(barTint, Offset(index * width + width * .18f, size.height - height), androidx.compose.ui.geometry.Size(width * .64f, height), androidx.compose.ui.geometry.CornerRadius(5f))
             }
             drawLine(PosBorder, Offset(0f, size.height), Offset(size.width, size.height), 2f)
         }
         selectedIndex?.let { index ->
             Surface(color = PosCoffeeDeep, shape = RoundedCornerShape(8.dp), modifier = Modifier.align(Alignment.TopCenter)) {
-                Text("${formatHour(index)}  ${NumberFormat.getCurrencyInstance(Locale("en", "PH")).format(values[index])}", color = Color.White, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Star, "gem", tint = PosGold, modifier = Modifier.size(12.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("${formatHour(index)}  ${NumberFormat.getCurrencyInstance(Locale("en", "PH")).format(values[index])}", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                }
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 184.dp), horizontalArrangement = Arrangement.SpaceBetween) {

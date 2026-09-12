@@ -2,68 +2,65 @@ package com.cafeos.tablet
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.layout.Arrangement
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Coffee
-import androidx.compose.material.icons.filled.FormatListBulleted
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TableBar
-import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.cafeos.tablet.data.Staff
 import com.cafeos.tablet.ui.AccessControl
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.ItemShopViewModel
+import com.cafeos.tablet.ui.SettingsStore
+import com.cafeos.tablet.ui.components.AppTopBar
+import com.cafeos.tablet.ui.screens.HubScreen
 import com.cafeos.tablet.ui.screens.*
-import com.cafeos.tablet.ui.theme.*
+import com.cafeos.tablet.ui.screens.shop.ItemShopPOSScreen
+import com.cafeos.tablet.ui.theme.PebotTheme
+import com.cafeos.tablet.ui.theme.PosInk
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SettingsStore.init(this)
+        enableEdgeToEdge()
         setContent {
-            PebotTheme {
+            val uiMode by SettingsStore.uiMode.collectAsState()
+            PebotTheme(themeMode = uiMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -75,244 +72,348 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// ─── Hub-and-Spoke Navigation (spec 003) ──────────────────────────────────────
+
+/** Route → AppTopBar title mapping. */
+val RouteTitles: Map<String, String> = mapOf(
+    "live_orders" to "Live Orders",
+    "pos" to "New Order",
+    "item_shop" to "Item Shop",
+    "kitchen" to "Kitchen",
+    "products" to "Products",
+    "inventory" to "Inventory",
+    "stock_history" to "Stock History",
+    "expenses" to "Expenses",
+    "loyalty" to "Loyalty",
+    "order_history" to "Order History",
+    "reviews" to "Reviews",
+    "tables" to "Tables",
+    "stations" to "Stations",
+    "staff" to "HR",
+    "analytics" to "Reports",
+    "settings" to "Settings",
+    "audit_logs" to "Audit Logs",
+    "connection" to "Connection"
+)
+
+/** 220ms slide-up + fade-in easing (matches HTML mockup `ease`). */
+private val HubTransitionEasing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
+private val HubEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    fadeIn(animationSpec = tween(220, easing = HubTransitionEasing)) +
+            slideInVertically(animationSpec = tween(220, easing = HubTransitionEasing)) { 10 }
+}
+private val HubExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    fadeOut(animationSpec = tween(220, easing = HubTransitionEasing)) +
+            slideOutVertically(animationSpec = tween(220, easing = HubTransitionEasing)) { 10 }
+}
+
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun MainScreen() {
     val navController = rememberNavController()
     val viewModel: CafeViewModel = viewModel()
-    var selectedItem by remember { mutableStateOf(0) }
-    var navCollapsed by remember { mutableStateOf(false) }
-    var currentStaff by remember { mutableStateOf<com.cafeos.tablet.data.Staff?>(null) }
+    var currentStaff by remember { mutableStateOf<Staff?>(null) }
 
     if (currentStaff == null) {
         LoginScreen(viewModel = viewModel, onLoginSuccess = { currentStaff = it })
         return
     }
-    
-    fun canAccess(route: String) = currentStaff != null && AccessControl.canAccessRoute(currentStaff!!, route)
 
-    // Navigation mirrors the Windows admin sidebar (spec 013 A1): same order,
-    // same labels, same grouping; Kitchen/Tables/Stations keep their own rail
-    // entries on the tablet. AccessControl applies the web role/permission rules.
-    val items = listOf(
-        NavigationItem("Live Orders", Icons.Default.FormatListBulleted, "live_orders", group = "OPERATIONS"),
-        NavigationItem("New Order", Icons.Default.ShoppingCart, "pos", group = "OPERATIONS"),
-        NavigationItem("Kitchen", Icons.Default.Restaurant, "kitchen", group = "OPERATIONS"),
-        NavigationItem("Analytics", Icons.Default.BarChart, "analytics", group = "OPERATIONS"),
-        NavigationItem("Products", Icons.Default.Coffee, "products", group = "OPERATIONS"),
-        NavigationItem("Inventory", Icons.Default.Inventory, "inventory", group = "OPERATIONS"),
-        NavigationItem("Stock History", Icons.Default.History, "stock_history", group = "OPERATIONS"),
-        NavigationItem("Expenses", Icons.Default.AttachMoney, "expenses", group = "OPERATIONS"),
-        NavigationItem("Loyalty", Icons.Default.LocalOffer, "loyalty", group = "MANAGEMENT"),
-        NavigationItem("Order History", Icons.Default.TableChart, "order_history", group = "MANAGEMENT"),
-        NavigationItem("Reviews", Icons.Default.Star, "reviews", group = "MANAGEMENT"),
-        NavigationItem("Tables", Icons.Default.TableBar, "tables", group = "MANAGEMENT"),
-        NavigationItem("Stations", Icons.Default.Build, "stations", group = "MANAGEMENT"),
-        NavigationItem("Staff", Icons.Default.Group, "staff", group = "MANAGEMENT"),
-        NavigationItem("Settings", Icons.Default.Settings, "settings", group = "MANAGEMENT"),
-        NavigationItem("Audit Logs", Icons.Default.List, "audit_logs", group = "MANAGEMENT"),
-        NavigationItem("Connection", Icons.Default.Wifi, "connection", group = "SYSTEM")
-    ).filter { canAccess(it.route) }
+    fun canAccess(route: String) =
+        currentStaff != null && AccessControl.canAccessRoute(currentStaff!!, route)
 
-    // Home = Live Orders for staff/admin; kitchen-role staff land on the Kitchen.
-    val startDestination = when {
-        AccessControl.canAccessRoute(currentStaff!!, "live_orders") -> "live_orders"
-        AccessControl.canAccessRoute(currentStaff!!, "kitchen") -> "kitchen"
-        else -> items.firstOrNull()?.route ?: "pos"
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val isOnHome = currentRoute == "home"
+
+    // ── Back handler: from any app screen → HubScreen (never app exit) ─────
+    BackHandler(enabled = !isOnHome) {
+        navController.popBackStack("home", inclusive = false)
     }
 
-    val navWidth by animateDpAsState(targetValue = if (navCollapsed) 88.dp else 250.dp, label = "navWidth")
-    val activeOrderCount by viewModel.allOrders.collectAsState(initial = emptyList())
-
-    Scaffold(
-            containerColor = PosCoffee,
-        content = { padding ->
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .width(navWidth)
-                        .fillMaxHeight(),
-                    color = PosCoffeeDeep,
-                    tonalElevation = 0.dp
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    ) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            IconButton(onClick = { navCollapsed = !navCollapsed }) {
-                                Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = if (navCollapsed) "Expand navigation" else "Collapse navigation",
-                                    tint = PosCream
-                                )
-                            }
-                        }
-
-                        if (!navCollapsed) {
-                            Text(
-                                text = "PEBOT",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = PosCream,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "POS Dashboard",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = PosGold,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
-                        }
-
-                        if (!navCollapsed) {
-                            Text(
-                                "OPERATIONS",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = PosGold,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .verticalScroll(rememberScrollState())
-                        ) {
-                            var lastGroup: String? = null
-                            items.forEachIndexed { index, item ->
-                                if (!navCollapsed && item.group != lastGroup) {
-                                    Text(
-                                        item.group,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = PosGold,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(
-                                            top = if (lastGroup == null) 2.dp else 16.dp,
-                                            bottom = 8.dp,
-                                            start = 12.dp
-                                        )
-                                    )
-                                    lastGroup = item.group
-                                }
-                                val isSelected = selectedItem == index
-                                val indicatorColor by animateColorAsState(
-                                    if (isSelected) PosGold else Color.Transparent,
-                                    label = "navigationIndicator"
-                                )
-                                NavigationRailItem(
-                                    icon = {
-                                        if (item.route == "live_orders") {
-                                            Box {
-                                                Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(25.dp))
-                                                val count = activeOrderCount.count { it.status == "PENDING" || it.status == "PREPARING" }
-                                                if (count > 0) {
-                                                    Badge(
-                                                        modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd),
-                                                        containerColor = PosDanger,
-                                                        contentColor = Color.White
-                                                    ) { Text(if (count > 9) "9+" else count.toString()) }
-                                                }
-                                            }
-                                        } else {
-                                            Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(22.dp))
-                                        }
-                                    },
-                                    label = { Text(item.label) },
-                                    selected = isSelected,
-                                    onClick = {
-                                        selectedItem = index
-                                        navController.navigate(item.route) {
-                                            popUpTo(navController.graph.startDestinationId)
-                                            launchSingleTop = true
-                                        }
-                                    },
-                                    alwaysShowLabel = !navCollapsed,
-                                    modifier = Modifier
-                                        .padding(bottom = 6.dp)
-                                        .fillMaxWidth(),
-                                    colors = NavigationRailItemDefaults.colors(
-                                        selectedIconColor = PosCoffeeDeep,
-                                        selectedTextColor = PosCoffeeDeep,
-                                        unselectedIconColor = PosCream.copy(alpha = 0.78f),
-                                        unselectedTextColor = PosCream.copy(alpha = 0.78f),
-                                        disabledIconColor = PosCream.copy(alpha = 0.42f),
-                                        disabledTextColor = PosCream.copy(alpha = 0.42f),
-                                        indicatorColor = indicatorColor
-                                    )
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { currentStaff = null }
-                                .padding(vertical = 10.dp, horizontal = 12.dp),
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Logout,
-                                contentDescription = "Log out",
-                                tint = PosCream.copy(alpha = 0.9f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            if (!navCollapsed) {
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text("Log out", color = PosCream.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge)
-                            }
-                        }
-                    }
-                }
-
-                Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = startDestination,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                    composable("live_orders") { if (canAccess("live_orders")) LiveOrdersScreen(viewModel) else AccessDeniedScreen() }
-                    composable("pos") { if (canAccess("pos")) POSScreen(viewModel) else AccessDeniedScreen() }
-                    composable("kitchen") { if (canAccess("kitchen")) KitchenScreen(viewModel) else AccessDeniedScreen() }
-                    composable("analytics") { if (canAccess("analytics")) AnalyticsScreen(viewModel) else AccessDeniedScreen() }
-                    composable("products") { if (canAccess("products")) ProductScreen(viewModel) else AccessDeniedScreen() }
-                    composable("inventory") { if (canAccess("inventory")) InventoryScreen(viewModel) else AccessDeniedScreen() }
-                    composable("stock_history") { if (canAccess("stock_history")) StockHistoryScreen(viewModel) else AccessDeniedScreen() }
-                    composable("expenses") { if (canAccess("expenses")) ExpensesScreen(viewModel) else AccessDeniedScreen() }
-                    composable("loyalty") { if (canAccess("loyalty")) LoyaltyScreen(viewModel) else AccessDeniedScreen() }
-                    composable("order_history") { if (canAccess("order_history")) OrderHistoryScreen(viewModel) else AccessDeniedScreen() }
-                    composable("reviews") { if (canAccess("reviews")) ReviewsScreen(viewModel) else AccessDeniedScreen() }
-                    composable("tables") { if (canAccess("tables")) TablesManagementScreen(viewModel) else AccessDeniedScreen() }
-                    composable("stations") { if (canAccess("stations")) StationsScreen(viewModel) else AccessDeniedScreen() }
-                    composable("staff") { if (canAccess("staff")) StaffManagementScreen(viewModel) else AccessDeniedScreen() }
-                    composable("settings") { if (canAccess("settings")) SettingsScreen(viewModel) else AccessDeniedScreen() }
-                    composable("audit_logs") { if (canAccess("audit_logs")) AuditLogScreen(viewModel) else AccessDeniedScreen() }
-                    composable("connection") { if (canAccess("connection")) ConnectionScreen(viewModel) else AccessDeniedScreen() }
-                    }
-                }
-            }
+    NavHost(
+        navController = navController,
+        startDestination = "home",
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        // ── Hub (Home) ────────────────────────────────────────────────────
+        composable(
+            "home",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            HubScreen(
+                navController = navController,
+                viewModel = viewModel,
+                staff = currentStaff!!
+            )
         }
-    )
+
+        // ── Spokes (app screens — each wrapped with AppTopBar) ────────────
+        composable(
+            "live_orders",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("live_orders"))
+                AppScreenFrame("Live Orders", navController) {
+                    LiveOrdersScreen(viewModel)
+                }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "pos",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("pos"))
+                AppScreenFrame("New Order", navController) {
+                    POSScreen(
+                        viewModel = viewModel,
+                        onNavigateToLoyalty = { navController.navigate("loyalty") { launchSingleTop = true } },
+                        onNavigateToItemShop = { navController.navigate("item_shop") { launchSingleTop = true } }
+                    )
+                }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "item_shop",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            val itemShopViewModel: ItemShopViewModel = viewModel()
+            val posViewModel: CafeViewModel = viewModel()
+            if (canAccess("pos"))
+                AppScreenFrame("Item Shop", navController) {
+                    val lastOrder by itemShopViewModel.lastPlacedOrder.collectAsState()
+                    ItemShopPOSScreen(
+                        viewModel = itemShopViewModel,
+                        onNavigateBack = { navController.popBackStack("home", inclusive = false) },
+                        onNavigateToCheckoutConfirm = {}
+                    )
+                    lastOrder?.let { order ->
+                        OrderConfirmationDialog(
+                            viewModel = posViewModel,
+                            order = order,
+                            onDismiss = { navController.popBackStack("home", inclusive = false) }
+                        )
+                    }
+                }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "kitchen",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("kitchen"))
+                AppScreenFrame("Kitchen", navController) { KitchenScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "analytics",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("analytics"))
+                AppScreenFrame("Reports", navController) { AnalyticsScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "products",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("products"))
+                AppScreenFrame("Products", navController) { ProductScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "inventory",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("inventory"))
+                AppScreenFrame("Inventory", navController) { InventoryScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "stock_history",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("stock_history"))
+                AppScreenFrame("Stock History", navController) { StockHistoryScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "expenses",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("expenses"))
+                AppScreenFrame("Expenses", navController) { ExpensesScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "loyalty",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("loyalty"))
+                AppScreenFrame("Loyalty", navController) { LoyaltyScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "order_history",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("order_history"))
+                AppScreenFrame("Order History", navController) { OrderHistoryScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "reviews",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("reviews"))
+                AppScreenFrame("Reviews", navController) { ReviewsScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "tables",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("tables"))
+                AppScreenFrame("Tables", navController) { TablesManagementScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "stations",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("stations"))
+                AppScreenFrame("Stations", navController) { StationsScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "staff",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("staff"))
+                AppScreenFrame("HR", navController) { StaffManagementScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "settings",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("settings"))
+                AppScreenFrame("Settings", navController) { SettingsScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "audit_logs",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("audit_logs"))
+                AppScreenFrame("Audit Logs", navController) { AuditLogScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+        composable(
+            "connection",
+            enterTransition = HubEnterTransition,
+            exitTransition = HubExitTransition,
+            popEnterTransition = HubEnterTransition,
+            popExitTransition = HubExitTransition,
+        ) {
+            if (canAccess("connection"))
+                AppScreenFrame("Connection", navController) { ConnectionScreen(viewModel) }
+            else AccessDeniedScreen()
+        }
+    }
 }
 
-data class NavigationItem(
-    val label: String,
-    val icon: ImageVector,
-    val route: String,
-    val group: String = "OPERATIONS"
-)
+/**
+ * Wraps an app screen (spoke) with the persistent Home top bar.
+ * The top bar is at fixed position; the screen content fills the remaining
+ * height and scrolls independently.
+ */
+@Composable
+private fun AppScreenFrame(
+    title: String,
+    navController: NavHostController,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+    ) {
+        AppTopBar(title = title, navController = navController)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f)
+                .navigationBarsPadding()
+                .imePadding()
+        ) {
+            content()
+        }
+    }
+}
 
 @Composable
 private fun AccessDeniedScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-        Text("Access restricted", color = PosInk, style = MaterialTheme.typography.titleLarge)
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Access restricted",
+            color = PosInk,
+            style = MaterialTheme.typography.titleLarge
+        )
     }
 }

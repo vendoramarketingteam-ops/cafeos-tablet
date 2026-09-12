@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.Product
 import com.cafeos.tablet.ui.theme.PosAccent
+import com.cafeos.tablet.ui.theme.Dimens
 import com.cafeos.tablet.ui.theme.PosBorder
 import com.cafeos.tablet.ui.theme.PosInk
 import com.cafeos.tablet.ui.theme.PosInkSoft
@@ -35,16 +36,16 @@ fun ProductCard(product: Product, formatter: NumberFormat, onClick: () -> Unit) 
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick),
         color = Color.White,
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, PosBorder)
+        shape = RoundedCornerShape(Dimens.radiusLarge),
+        border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, PosBorder)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(Dimens.space20)) {
             Text(product.name, style = MaterialTheme.typography.titleLarge, color = PosInk)
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Dimens.space4))
             Text(formatter.format(product.price), style = MaterialTheme.typography.bodyLarge, color = PosAccent, fontWeight = FontWeight.Bold)
             
             if (!product.description.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.space8))
                 Text(product.description, style = MaterialTheme.typography.bodySmall, color = PosInkSoft, maxLines = 2)
             }
         }

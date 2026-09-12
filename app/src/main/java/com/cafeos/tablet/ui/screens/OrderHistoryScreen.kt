@@ -1,5 +1,7 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -24,6 +26,7 @@ import com.cafeos.tablet.data.Order
 import com.cafeos.tablet.ui.CafeViewModel
 import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
+import com.cafeos.tablet.ui.components.rarityByPrice
 import com.cafeos.tablet.ui.theme.*
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -164,13 +167,11 @@ fun OrderCard(order: Order, currencyFormatter: NumberFormat, dateFormatter: Simp
         else -> PosInkSoft
     }
 
-    Card(
+    GameCard(
+        rarity = rarityByPrice(order.totalAmount),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            .clickable(onClick = onClick)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

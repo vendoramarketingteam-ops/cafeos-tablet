@@ -78,3 +78,33 @@ val Typography = Typography(
         letterSpacing = 0.sp
     )
 )
+
+// --- Gamified type scale (additive) ---
+// Bold condensed/display header for shop titles, category tabs, victory headers.
+val GameHeader = TextStyle(
+    fontFamily = FontFamily.SansSerif,
+    fontWeight = FontWeight.Black,
+    fontSize = 28.sp,
+    lineHeight = 36.sp,
+    letterSpacing = (-0.5).sp
+)
+
+// Tabular figures for all currency so columns align (legibility-first).
+val Currency = TextStyle(
+    fontFamily = FontFamily.SansSerif,
+    fontWeight = FontWeight.SemiBold,
+    fontSize = 16.sp,
+    lineHeight = 22.sp,
+    letterSpacing = 0.sp,
+    fontFeatureSettings = "tnum"
+)
+
+// Currency for totals/large amounts.
+val CurrencyLarge = TextStyle(
+    fontFamily = FontFamily.SansSerif,
+    fontWeight = FontWeight.Black,
+    fontSize = 22.sp,
+    lineHeight = 28.sp,
+    letterSpacing = 0.sp,
+    fontFeatureSettings = "tnum"
+)

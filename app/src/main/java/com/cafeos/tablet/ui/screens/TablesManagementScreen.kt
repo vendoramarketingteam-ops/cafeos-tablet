@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -167,12 +170,11 @@ fun TableManagementCard(
     onSetOccupancy: (Int) -> Unit,
     onCycleStatus: () -> Unit
 ) {
-    Card(
+    GameCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        rarity = Rarity.COMMON
     ) {
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()

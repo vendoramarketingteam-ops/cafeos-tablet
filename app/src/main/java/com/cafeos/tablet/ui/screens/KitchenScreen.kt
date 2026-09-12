@@ -1,6 +1,7 @@
 package com.cafeos.tablet.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.*
 import com.cafeos.tablet.ui.CafeViewModel
@@ -83,7 +85,9 @@ fun KitchenScreen(viewModel: CafeViewModel) {
                                 "All (${orders.size})"
                             } else {
                                 "${station} (${countsByStationName[station] ?: 0})"
-                            }
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 )
@@ -96,11 +100,11 @@ fun KitchenScreen(viewModel: CafeViewModel) {
                 onCheckedChange = { showCompleted = it },
                 colors = CheckboxDefaults.colors(checkedColor = PosAccent)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Dimens.space8))
             Text("Show completed", color = MaterialTheme.colorScheme.onSurface)
         }
 
-        LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
             if (displayOrders.isEmpty()) {
                 item {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -156,14 +160,25 @@ fun KitchenOrderCard(order: Order, viewModel: CafeViewModel, currencyFormatter: 
         "CANCELLED" -> PosDanger
         else -> PosInkSoft
     }
+    // Order age / urgency — computed early so the card frame can react to it.
+    // Spec §2: a long-waiting order = "rare item running out" on the shop floor.
+    val elapsedMinutes = ((System.currentTimeMillis() - order.createdAt) / 60_000L).toInt()
+    val elapsedLabel = if (elapsedMinutes < 60) "$elapsedMinutes min ago" else "${elapsedMinutes / 60}h ${elapsedMinutes % 60}m ago"
+    val urgent = (order.status == "PENDING" || order.status == "PREPARING") && elapsedMinutes >= 10
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                if (urgent) 2.dp else 1.dp,
+                if (urgent) PosDanger else PosBorder,
+                RoundedCornerShape(Dimens.radiusLarge)
+            ),
+        shape = RoundedCornerShape(Dimens.radiusLarge),
         colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(Dimens.space16)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -176,21 +191,26 @@ fun KitchenOrderCard(order: Order, viewModel: CafeViewModel, currencyFormatter: 
                 }
                 Surface(
                     color = statusColor.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(Dimens.radiusXLarge)
                 ) {
                     Text(
                         text = order.status,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = Dimens.space12, vertical = Dimens.space4),
                         style = MaterialTheme.typography.labelMedium,
                         color = statusColor,
                         fontWeight = FontWeight.Bold
                     )
                 }
+                if (urgent) {
+                    Icon(
+                        imageVector = Icons.Default.WarningAmber,
+                        contentDescription = "Urgent order",
+                        tint = PosDanger,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
 
-            val elapsedMinutes = ((System.currentTimeMillis() - order.createdAt) / 60_000L).toInt()
-            val elapsedLabel = if (elapsedMinutes < 60) "$elapsedMinutes min ago" else "${elapsedMinutes / 60}h ${elapsedMinutes % 60}m ago"
-            val urgent = (order.status == "PENDING" || order.status == "PREPARING") && elapsedMinutes >= 10
             val orderTypeLabel = when (order.orderType) {
                 "DELIVERY" -> "🛵 Delivery"
                 "TAKEOUT" -> "🥡 Takeout"
@@ -201,12 +221,12 @@ fun KitchenOrderCard(order: Order, viewModel: CafeViewModel, currencyFormatter: 
                 style = MaterialTheme.typography.labelMedium,
                 color = if (urgent) PosDanger else PosGold,
                 fontWeight = if (urgent) FontWeight.Bold else FontWeight.Medium,
-                modifier = Modifier.padding(bottom = 6.dp)
+                modifier = Modifier.padding(bottom = Dimens.space4)
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Dimens.space12))
             Divider(color = PosBorder.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Dimens.space12))
 
             items.forEach { item ->
                 val product = productMap[item.productId]
@@ -224,7 +244,7 @@ fun KitchenOrderCard(order: Order, viewModel: CafeViewModel, currencyFormatter: 
                                 text = item.notes,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = PosGold,
-                                modifier = Modifier.padding(start = 8.dp)
+                                modifier = Modifier.padding(start = Dimens.space8)
                             )
                         }
                     }
@@ -239,7 +259,7 @@ fun KitchenOrderCard(order: Order, viewModel: CafeViewModel, currencyFormatter: 
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Dimens.space12))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -250,13 +270,13 @@ fun KitchenOrderCard(order: Order, viewModel: CafeViewModel, currencyFormatter: 
             }
 
             if (order.status == "PENDING" || order.status == "PREPARING") {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 Button(
                     onClick = {
                         onStatusChange(if (order.status == "PENDING") "PREPARING" else "COMPLETED")
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (order.status == "PENDING") PosGold else PosAccent
                     )

@@ -2,6 +2,7 @@ package com.cafeos.tablet.ui.screens
 
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -67,7 +68,15 @@ private fun LoginCard(
     val scope = rememberCoroutineScope()
 
     Card(
-        modifier = Modifier.width(420.dp),
+        modifier = Modifier
+            .width(420.dp)
+            .then(
+                if (isClassic()) Modifier else Modifier.border(
+                    width = if (isGamified()) 2.dp else 1.dp,
+                    color = if (isGamified()) glowColor() else PosBorder,
+                    shape = RoundedCornerShape(28.dp)
+                )
+            ),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = PosSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
@@ -170,7 +179,15 @@ private fun SetupAdminCard(
     val scope = rememberCoroutineScope()
 
     Card(
-        modifier = Modifier.width(420.dp),
+        modifier = Modifier
+            .width(420.dp)
+            .then(
+                if (isClassic()) Modifier else Modifier.border(
+                    width = if (isGamified()) 2.dp else 1.dp,
+                    color = if (isGamified()) glowColor() else PosBorder,
+                    shape = RoundedCornerShape(28.dp)
+                )
+            ),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = PosSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)

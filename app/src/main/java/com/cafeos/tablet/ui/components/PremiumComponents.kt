@@ -1,6 +1,7 @@
 package com.cafeos.tablet.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,12 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.cafeos.tablet.ui.theme.PosCoffee
-import com.cafeos.tablet.ui.theme.PosInk
-import com.cafeos.tablet.ui.theme.PosInkSoft
-import com.cafeos.tablet.ui.theme.PosInfo
-import com.cafeos.tablet.ui.theme.PosMuted
-import com.cafeos.tablet.ui.theme.PosSurface
+import com.cafeos.tablet.ui.theme.*
 
 @Composable
 fun PremiumScreen(
@@ -42,8 +38,8 @@ fun PremiumScreen(
         modifier = modifier
             .fillMaxSize()
             .background(PosCoffee)
-            .padding(horizontal = 18.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = Dimens.space16, vertical = Dimens.space8),
+        verticalArrangement = Arrangement.spacedBy(Dimens.space8),
         content = content
     )
 }
@@ -54,16 +50,40 @@ fun PremiumHeader(
     subtitle: String? = null,
     action: (@Composable () -> Unit)? = null
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(title, style = MaterialTheme.typography.headlineSmall, color = PosInk, fontWeight = FontWeight.Bold)
-            subtitle?.let { Text(it, color = PosMuted, style = MaterialTheme.typography.labelMedium) }
+    val classic = isClassic()
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Dimens.space8)
+            ) {
+                if (!classic) GemIcon(modifier = Modifier.size(22.dp))
+                Text(
+                    title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = if (classic) PosInk else PosPaper,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            action?.invoke()
         }
-        action?.invoke()
+        if (!classic) {
+            Spacer(Modifier.height(Dimens.space8))
+            // MOBA "tavern plank" divider — neon in GAMIFIED, flat in FAST.
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(if (isGamified()) glowColor() else PosBorder.copy(alpha = 0.5f))
+            )
+        }
+        subtitle?.let {
+            Text(it, color = PosInkSoft, style = MaterialTheme.typography.labelMedium)
+        }
     }
 }
 
@@ -73,16 +93,45 @@ fun PremiumPanel(
     title: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val classic = isClassic()
+    val gamified = isGamified()
+    // MOBA quest-log frame: neon-cyan border + lift in GAMIFIED, flat gray frame in
+    // FAST, plain card in CLASSIC. The gamified visual layer is always-on except
+    // Classic (spec FR-004 "plain revert").
+    val frameColor = if (gamified) glowColor() else PosBorder.copy(alpha = 0.5f)
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (classic) Modifier else Modifier.border(
+                    width = if (gamified) 1.5.dp else 1.dp,
+                    color = frameColor,
+                    shape = RoundedCornerShape(Dimens.radiusLarge)
+                )
+            ),
+        shape = RoundedCornerShape(Dimens.radiusLarge),
+        colors = CardDefaults.cardColors(
+            containerColor = if (classic) PosSurface else PosSurface.copy(alpha = 0.92f)
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (gamified) Dimens.space4 else 2.dp
+        )
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(Dimens.space16)) {
             title?.let {
-                Text(it, color = PosInk, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(12.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.space8)
+                ) {
+                    if (!classic) GemIcon(modifier = Modifier.size(Dimens.space16))
+                    Text(
+                        it,
+                        color = PosPaper,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(Modifier.height(Dimens.space12))
             }
             content()
         }
@@ -91,8 +140,8 @@ fun PremiumPanel(
 
 @Composable
 fun StatusDot(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Icon(Icons.Default.Circle, contentDescription = null, tint = color, modifier = Modifier.size(8.dp))
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
+        Icon(Icons.Default.Circle, contentDescription = null, tint = color, modifier = Modifier.size(Dimens.space8))
         Text(label, color = PosMuted, style = MaterialTheme.typography.labelMedium)
     }
 }

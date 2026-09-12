@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -88,12 +91,11 @@ fun ReviewsScreen(viewModel: CafeViewModel) {
 fun ReviewCard(review: Review, showSuggestion: Boolean = false, productName: String? = null, onDelete: () -> Unit) {
     val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
 
-    Card(
+    GameCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        rarity = Rarity.COMMON
     ) {
+
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

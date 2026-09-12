@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.Attendance
 import com.cafeos.tablet.data.Staff
@@ -117,11 +121,11 @@ fun StaffManagementScreen(viewModel: CafeViewModel) {
                 Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    text = { Text(title) }
+                    text = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 )
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.space16))
         when (selectedTab) {
             0 -> StaffTeamSection(viewModel)
             1 -> TimeClockSection(viewModel)
@@ -149,17 +153,17 @@ private fun StaffTeamSection(viewModel: CafeViewModel) {
         ) {
             Button(
                 onClick = { editingStaff = null; showAddDialog = true },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(Dimens.space16))
+                Spacer(modifier = Modifier.width(Dimens.space8))
                 Text("Add Staff", fontWeight = FontWeight.SemiBold)
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
 
-        LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
             items(staff) { member ->
                 StaffCard(
                     staff = member,
@@ -214,17 +218,16 @@ private fun TimeClockSection(viewModel: CafeViewModel) {
             style = MaterialTheme.typography.labelMedium,
             color = PosMuted
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.space8))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
             items(staff) { member ->
                 val open = openAttendance[member.id]
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                GameCard(
+                    rarity = Rarity.COMMON,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        modifier = Modifier.fillMaxWidth().padding(Dimens.space12),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -244,14 +247,14 @@ private fun TimeClockSection(viewModel: CafeViewModel) {
                         if (open == null) {
                             Button(
                                 onClick = { scope.launch { viewModel.clockIn(member.id); reload() } },
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(Dimens.space8),
                                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
                             ) { Text("Clock In", fontWeight = FontWeight.SemiBold) }
                         } else {
                             OutlinedButton(
                                 onClick = { scope.launch { viewModel.clockOut(open.id); reload() } },
-                                shape = RoundedCornerShape(10.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, PosBorder)
+                                shape = RoundedCornerShape(Dimens.space8),
+                                border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, PosBorder)
                             ) { Text("Clock Out", color = PosGold) }
                         }
                     }
@@ -286,22 +289,21 @@ private fun TimeOffSection(viewModel: CafeViewModel) {
             Text("${pending.size} pending request(s)", style = MaterialTheme.typography.labelLarge, color = PosMuted)
             Button(
                 onClick = { showRequestForm = true },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) { Text("New Request", fontWeight = FontWeight.SemiBold) }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.space12))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
             if (pending.isEmpty()) {
-                item { Text("No pending leave requests", color = PosMuted, modifier = Modifier.padding(vertical = 24.dp)) }
+                item { Text("No pending leave requests", color = PosMuted, modifier = Modifier.padding(vertical = Dimens.space24)) }
             }
             items(pending) { request ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                GameCard(
+                    rarity = Rarity.COMMON,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
+                    Column(modifier = Modifier.padding(Dimens.space12)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(staffName(request.staffId), style = MaterialTheme.typography.titleMedium, color = PosPaper, fontWeight = FontWeight.SemiBold)
@@ -330,7 +332,7 @@ private fun TimeOffSection(viewModel: CafeViewModel) {
             text = {
                 Column {
                     Text("Staff", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
                         staff.forEach { s ->
                             FilterChip(
                                 selected = selectedStaffId == s.id,
@@ -340,18 +342,18 @@ private fun TimeOffSection(viewModel: CafeViewModel) {
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Spacer(modifier = Modifier.height(Dimens.space12))
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
                         val options = (leaveTypes.map { it.name } + listOf("ANNUAL", "SICK", "URGENT")).distinct()
                         options.forEach { t ->
                             FilterChip(selected = type == t, onClick = { type = t }, label = { Text(t) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = PosAccentSoft, selectedLabelColor = PosAccent))
                         }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
                     OutlinedTextField(value = startText, onValueChange = { startText = it }, label = { Text("Start date (yyyy-MM-dd)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = endText, onValueChange = { endText = it }, label = { Text("End date (yyyy-MM-dd)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = reasonText, onValueChange = { reasonText = it }, label = { Text("Reason") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                 }
             },
@@ -369,14 +371,14 @@ private fun TimeOffSection(viewModel: CafeViewModel) {
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(Dimens.radiusMedium)
                 ) { Text("Submit", fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
                 TextButton(onClick = { showRequestForm = false }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             },
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(Dimens.radiusXLarge)
         )
     }
 }
@@ -400,8 +402,8 @@ private fun TrainingSection(viewModel: CafeViewModel) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text("Staff", style = MaterialTheme.typography.labelMedium, color = PosMuted)
-        Spacer(modifier = Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.progressHeight))
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
             staff.forEach { s ->
                 FilterChip(
                     selected = selectedStaffId == s.id,
@@ -411,27 +413,26 @@ private fun TrainingSection(viewModel: CafeViewModel) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Button(
                 onClick = { programText = ""; showAdd = true },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) { Text("Add Training", fontWeight = FontWeight.SemiBold) }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.space12))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
             if (trainings.isEmpty()) {
-                item { Text("No training records for this staff member", color = PosMuted, modifier = Modifier.padding(vertical = 20.dp)) }
+                item { Text("No training records for this staff member", color = PosMuted, modifier = Modifier.padding(vertical = Dimens.space20)) }
             }
             items(trainings) { t ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                GameCard(
+                    rarity = Rarity.COMMON,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        modifier = Modifier.fillMaxWidth().padding(Dimens.space12),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -447,7 +448,7 @@ private fun TrainingSection(viewModel: CafeViewModel) {
                                 colors = SwitchDefaults.colors(checkedThumbColor = PosAccent)
                             )
                             IconButton(onClick = { scope.launch { viewModel.deleteStaffTraining(t); reload() } }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(Dimens.space16))
                             }
                         }
                     }
@@ -463,7 +464,7 @@ private fun TrainingSection(viewModel: CafeViewModel) {
             text = {
                 Column {
                     Text(if (selectedStaffId != null) staff.firstOrNull { it.id == selectedStaffId }?.name ?: "" else "Select a staff member first", style = MaterialTheme.typography.bodyMedium, color = PosInkSoft)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = programText, onValueChange = { programText = it }, label = { Text("Training program") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                 }
             },
@@ -480,12 +481,12 @@ private fun TrainingSection(viewModel: CafeViewModel) {
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(Dimens.radiusMedium)
                 ) { Text("Save", fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = { TextButton(onClick = { showAdd = false }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) } },
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(Dimens.radiusXLarge)
         )
     }
 }
@@ -526,8 +527,8 @@ private fun DocumentsSection(viewModel: CafeViewModel) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text("Staff", style = MaterialTheme.typography.labelMedium, color = PosMuted)
-        Spacer(modifier = Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.progressHeight))
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
             staff.forEach { s ->
                 FilterChip(
                     selected = selectedStaffId == s.id,
@@ -537,27 +538,26 @@ private fun DocumentsSection(viewModel: CafeViewModel) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Button(
                 onClick = { titleText = ""; type = "CONTRACT"; pickedPath = null; showAdd = true },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) { Text("Add Document", fontWeight = FontWeight.SemiBold) }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.space12))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
             if (documents.isEmpty()) {
-                item { Text("No documents for this staff member", color = PosMuted, modifier = Modifier.padding(vertical = 20.dp)) }
+                item { Text("No documents for this staff member", color = PosMuted, modifier = Modifier.padding(vertical = Dimens.space20)) }
             }
             items(documents) { doc ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                GameCard(
+                    rarity = Rarity.COMMON,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        modifier = Modifier.fillMaxWidth().padding(Dimens.space12),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -566,7 +566,7 @@ private fun DocumentsSection(viewModel: CafeViewModel) {
                             Text("${doc.fileType ?: "OTHER"} · ${SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(doc.uploadedAt))}", style = MaterialTheme.typography.bodySmall, color = PosMuted)
                         }
                         IconButton(onClick = { scope.launch { viewModel.deleteStaffDocument(doc); reload() } }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(Dimens.space16))
                         }
                     }
                 }
@@ -581,19 +581,19 @@ private fun DocumentsSection(viewModel: CafeViewModel) {
             text = {
                 Column {
                     Text(selectedStaffId?.let { id -> staff.firstOrNull { it.id == id }?.name } ?: "Select a staff member first", style = MaterialTheme.typography.bodyMedium, color = PosInkSoft)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = titleText, onValueChange = { titleText = it }, label = { Text("Document name") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Spacer(modifier = Modifier.height(Dimens.space8))
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
                         listOf("CONTRACT", "NDA", "CERTIFICATION", "OTHER").forEach { t ->
                             FilterChip(selected = type == t, onClick = { type = t }, label = { Text(t) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = PosAccentSoft, selectedLabelColor = PosAccent))
                         }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedButton(
                         onClick = { picker.launch("*/*") },
                         modifier = Modifier.fillMaxWidth(),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, PosBorder)
+                        border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, PosBorder)
                     ) {
                         Text(if (pickedPath == null) "Choose file" else "File selected", color = PosGold)
                     }
@@ -613,12 +613,12 @@ private fun DocumentsSection(viewModel: CafeViewModel) {
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(Dimens.radiusMedium)
                 ) { Text("Save", fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = { TextButton(onClick = { showAdd = false }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) } },
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(Dimens.radiusXLarge)
         )
     }
 }
@@ -643,8 +643,8 @@ private fun ReviewsSection(viewModel: CafeViewModel) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text("Staff", style = MaterialTheme.typography.labelMedium, color = PosMuted)
-        Spacer(modifier = Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.progressHeight))
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
             staff.forEach { s ->
                 FilterChip(
                     selected = selectedStaffId == s.id,
@@ -654,31 +654,30 @@ private fun ReviewsSection(viewModel: CafeViewModel) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Button(
                 onClick = { score = 5; commentsText = ""; showAdd = true },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) { Text("New Review", fontWeight = FontWeight.SemiBold) }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.space12))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
             if (reviews.isEmpty()) {
-                item { Text("No performance reviews for this staff member", color = PosMuted, modifier = Modifier.padding(vertical = 20.dp)) }
+                item { Text("No performance reviews for this staff member", color = PosMuted, modifier = Modifier.padding(vertical = Dimens.space20)) }
             }
             items(reviews) { review ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                GameCard(
+                    rarity = Rarity.COMMON,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
+                    Column(modifier = Modifier.padding(Dimens.space12)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("★".repeat(review.score.coerceIn(1, 5)), style = MaterialTheme.typography.titleMedium, color = PosGold, fontWeight = FontWeight.Bold)
                             Text(SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(review.date)), style = MaterialTheme.typography.bodySmall, color = PosMuted)
                         }
-                        review.comments?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = PosInkSoft, modifier = Modifier.padding(top = 6.dp)) }
+                        review.comments?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = PosInkSoft, modifier = Modifier.padding(top = Dimens.space4)) }
                     }
                 }
             }
@@ -692,15 +691,15 @@ private fun ReviewsSection(viewModel: CafeViewModel) {
             text = {
                 Column {
                     Text(selectedStaffId?.let { id -> staff.firstOrNull { it.id == id }?.name } ?: "Select a staff member first", style = MaterialTheme.typography.bodyMedium, color = PosInkSoft)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     Text("Rating", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Spacer(modifier = Modifier.height(Dimens.progressHeight))
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
                         (1..5).forEach { s ->
                             FilterChip(selected = score == s, onClick = { score = s }, label = { Text("$s ★") }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = PosAccentSoft, selectedLabelColor = PosAccent))
                         }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = commentsText, onValueChange = { commentsText = it }, label = { Text("Comments") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                 }
             },
@@ -717,12 +716,12 @@ private fun ReviewsSection(viewModel: CafeViewModel) {
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(Dimens.radiusMedium)
                 ) { Text("Save", fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = { TextButton(onClick = { showAdd = false }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) } },
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(Dimens.radiusXLarge)
         )
     }
 }
@@ -750,8 +749,8 @@ private fun ScheduleSection(viewModel: CafeViewModel) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text("Staff", style = MaterialTheme.typography.labelMedium, color = PosMuted)
-        Spacer(modifier = Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.progressHeight))
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
             staff.forEach { s ->
                 FilterChip(
                     selected = selectedStaffId == s.id,
@@ -761,24 +760,23 @@ private fun ScheduleSection(viewModel: CafeViewModel) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Button(
                 onClick = { editing = null; dayIndex = 0; startText = "09:00"; endText = "17:00"; showDialog = true },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) { Text("Add Shift", fontWeight = FontWeight.SemiBold) }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.space12))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
             itemsIndexed(dayNames) { index, day ->
                 val daySchedules = schedules.filter { it.dayOfWeek == index }
-                Card(
+                GameCard(
+                    rarity = if (daySchedules.isNotEmpty()) Rarity.UNCOMMON else Rarity.COMMON,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = if (daySchedules.isEmpty()) PosCoffeeLight else PosAccentSoft.copy(alpha = 0.55f))
                 ) {
-                    Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(Dimens.space12), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(day, style = MaterialTheme.typography.titleMedium, color = PosPaper, fontWeight = FontWeight.SemiBold)
                             if (daySchedules.isNotEmpty()) {
@@ -797,9 +795,9 @@ private fun ScheduleSection(viewModel: CafeViewModel) {
                                     startText = daySchedules.first().shiftStart
                                     endText = daySchedules.first().shiftEnd
                                     showDialog = true
-                                }) { Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PosGold, modifier = Modifier.size(18.dp)) }
+                                }) { Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PosGold, modifier = Modifier.size(Dimens.space16)) }
                                 IconButton(onClick = { scope.launch { daySchedules.forEach { viewModel.deleteSchedule(it) }; reload() } }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Remove", tint = PosDanger, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Delete, contentDescription = "Remove", tint = PosDanger, modifier = Modifier.size(Dimens.space16))
                                 }
                             } else {
                                 TextButton(onClick = { editing = null; dayIndex = index; startText = "09:00"; endText = "17:00"; showDialog = true }) { Text("Add", color = PosAccent) }
@@ -818,15 +816,15 @@ private fun ScheduleSection(viewModel: CafeViewModel) {
             text = {
                 Column {
                     Text("Day", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Spacer(modifier = Modifier.height(Dimens.progressHeight))
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
                         dayNames.forEachIndexed { index, day ->
                             FilterChip(selected = dayIndex == index, onClick = { dayIndex = index }, label = { Text(day.take(3)) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = PosAccentSoft, selectedLabelColor = PosAccent))
                         }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = startText, onValueChange = { if (it.length <= 5) startText = it }, label = { Text("Shift start (HH:MM)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = endText, onValueChange = { if (it.length <= 5) endText = it }, label = { Text("Shift end (HH:MM)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
                 }
             },
@@ -848,12 +846,12 @@ private fun ScheduleSection(viewModel: CafeViewModel) {
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(Dimens.radiusMedium)
                 ) { Text("Save", fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) } },
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(Dimens.radiusXLarge)
         )
     }
 }
@@ -888,8 +886,8 @@ private fun PayrollSection(viewModel: CafeViewModel) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text("Staff", style = MaterialTheme.typography.labelMedium, color = PosMuted)
-        Spacer(modifier = Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.progressHeight))
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
             staff.forEach { s ->
                 FilterChip(
                     selected = selectedStaffId == s.id,
@@ -899,7 +897,7 @@ private fun PayrollSection(viewModel: CafeViewModel) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Button(
                 onClick = {
@@ -910,23 +908,22 @@ private fun PayrollSection(viewModel: CafeViewModel) {
                     overtimeText = "0"; sssText = "0"; philhealthText = "0"; pagibigText = "0"; taxText = "0"; otherDeductionsText = "0"
                     showDialog = true
                 },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) { Text("Generate Payroll", fontWeight = FontWeight.SemiBold) }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Spacer(modifier = Modifier.height(Dimens.space12))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
             if (payrolls.isEmpty()) {
-                item { Text("No payroll records for this staff member", color = PosMuted, modifier = Modifier.padding(vertical = 20.dp)) }
+                item { Text("No payroll records for this staff member", color = PosMuted, modifier = Modifier.padding(vertical = Dimens.space20)) }
             }
             items(payrolls) { payroll ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                GameCard(
+                    rarity = Rarity.COMMON,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        modifier = Modifier.fillMaxWidth().padding(Dimens.space12),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -962,21 +959,21 @@ private fun PayrollSection(viewModel: CafeViewModel) {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     fun dbl(v: String) = v.toDoubleOrNull() ?: 0.0
                     OutlinedTextField(value = periodStartText, onValueChange = { periodStartText = it }, label = { Text("Period start (yyyy-MM-dd)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = periodEndText, onValueChange = { periodEndText = it }, label = { Text("Period end (yyyy-MM-dd)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = baseSalaryText, onValueChange = { baseSalaryText = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("Base salary (₱)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = overtimeText, onValueChange = { overtimeText = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("Overtime pay (₱)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = sssText, onValueChange = { sssText = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("SSS (₱)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = philhealthText, onValueChange = { philhealthText = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("PhilHealth (₱)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = pagibigText, onValueChange = { pagibigText = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("Pag-IBIG (₱)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = taxText, onValueChange = { taxText = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("Withholding tax (₱)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     OutlinedTextField(value = otherDeductionsText, onValueChange = { otherDeductionsText = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("Other deductions (₱)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), singleLine = true)
                 }
             },
@@ -1008,28 +1005,27 @@ private fun PayrollSection(viewModel: CafeViewModel) {
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(Dimens.radiusMedium)
                 ) { Text("Generate", fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) } },
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(Dimens.radiusXLarge)
         )
     }
 }
 
 @Composable
 fun StaffCard(staff: Staff, onEdit: () -> Unit, onDelete: () -> Unit) {
-    Card(
+    GameCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        rarity = Rarity.COMMON
     ) {
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Dimens.space16),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1040,10 +1036,10 @@ fun StaffCard(staff: Staff, onEdit: () -> Unit, onDelete: () -> Unit) {
             }
             Row {
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PosGold, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PosGold, modifier = Modifier.size(Dimens.space16))
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(Dimens.space16))
                 }
             }
         }
@@ -1082,11 +1078,11 @@ fun StaffFormDialog(staff: Staff?, onDismiss: () -> Unit, onSave: (Staff) -> Uni
         text = {
             Column {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { pin = it.filter { c -> c.isDigit() }.take(6) },
@@ -1095,12 +1091,12 @@ fun StaffFormDialog(staff: Staff?, onDismiss: () -> Unit, onSave: (Staff) -> Uni
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = profitShareRate, onValueChange = { profitShareRate = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("Profit share (%)") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline), supportingText = { Text("Applied to positive net profit during payroll") })
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 Text("Role", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Spacer(modifier = Modifier.height(Dimens.space8))
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                     roles.forEach { r ->
                         FilterChip(
                             selected = role == r,
@@ -1113,7 +1109,7 @@ fun StaffFormDialog(staff: Staff?, onDismiss: () -> Unit, onSave: (Staff) -> Uni
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 Text("Page access", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 permissionOptions.chunked(2).forEach { row ->
                     Row(modifier = Modifier.fillMaxWidth()) {
@@ -1140,7 +1136,7 @@ fun StaffFormDialog(staff: Staff?, onDismiss: () -> Unit, onSave: (Staff) -> Uni
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Dimens.radiusMedium)
             ) {
                 Text("Save", fontWeight = FontWeight.SemiBold)
             }
@@ -1151,6 +1147,6 @@ fun StaffFormDialog(staff: Staff?, onDismiss: () -> Unit, onSave: (Staff) -> Uni
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }

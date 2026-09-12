@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -115,12 +118,11 @@ fun CustomerCard(
     currencyFormatter: NumberFormat,
     onAddPoints: () -> Unit
 ) {
-    Card(
+    GameCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        rarity = Rarity.COMMON
     ) {
+
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

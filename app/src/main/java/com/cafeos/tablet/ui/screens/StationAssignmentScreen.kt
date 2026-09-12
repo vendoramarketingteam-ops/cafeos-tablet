@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -75,10 +78,9 @@ fun StationAssignmentScreen(viewModel: CafeViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         if (stations.isEmpty()) {
-            Card(
+            GameCard(
+                rarity = Rarity.COMMON,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
             ) {
                 Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Restaurant, contentDescription = null, tint = PosMuted, modifier = Modifier.size(48.dp))
@@ -152,13 +154,11 @@ fun StationAssignmentCard(
     onClick: () -> Unit,
     onDeleteAssignment: (Int) -> Unit
 ) {
-    Card(
+    GameCard(
+        rarity = Rarity.COMMON,
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = if (isSelected) PosAccentSoft else PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

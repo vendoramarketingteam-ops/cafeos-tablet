@@ -806,6 +806,35 @@ interface CafeDao {
 
     @Query("SELECT COUNT(*) FROM OutboxQueue WHERE state IN ('PENDING','FAILED')")
     suspend fun countPendingOutbox(): Int
+
+    // ── Combo Links (MLBB Item Shop, spec 002) ─────────────────────────────────────
+    @Query("SELECT * FROM ComboLink WHERE baseProductId = :baseProductId ORDER BY sortOrder ASC")
+    suspend fun getComboLinksForBase(baseProductId: Int): List<ComboLinkEntity>
+
+    @Query("SELECT * FROM ComboLink ORDER BY baseProductId ASC, sortOrder ASC")
+    fun getAllComboLinks(): Flow<List<ComboLinkEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertComboLink(comboLink: ComboLinkEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertComboLinks(comboLinks: List<ComboLinkEntity>)
+
+    @Query("DELETE FROM ComboLink WHERE baseProductId = :baseProductId")
+    suspend fun deleteComboLinksForBase(baseProductId: Int)
+
+    @Query("SELECT * FROM DashboardTileOrder ORDER BY sortOrder ASC")
+    fun getTileOrders(): Flow<List<DashboardTileOrder>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTileOrder(order: DashboardTileOrder)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTileOrders(orders: List<DashboardTileOrder>)
+
+    @Query("DELETE FROM DashboardTileOrder")
+    suspend fun clearTileOrders()
+
 }
 
 data class ExpenseCategoryTotal(

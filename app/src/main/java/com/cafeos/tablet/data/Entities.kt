@@ -505,6 +505,38 @@ data class LeaveType(
 
 @Serializable
 @Entity(
+    tableName = "ComboLink",
+    foreignKeys = [
+        ForeignKey(
+            entity = Product::class,
+            parentColumns = ["id"],
+            childColumns = ["baseProductId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = Product::class,
+            parentColumns = ["id"],
+            childColumns = ["addonProductId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["baseProductId"]),
+        Index(value = ["addonProductId"])
+    ]
+)
+data class ComboLinkEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val baseProductId: Int,
+    val addonProductId: Int,
+    val deltaPriceCents: Long,
+    val sortOrder: Int = 0,
+    val required: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Serializable
+@Entity(
     tableName = "LeaveRequest",
     indices = [Index(value = ["staffId"])]
 )
@@ -724,4 +756,13 @@ data class SupplierIngredientTrend(
     val change: PriceChange?,
     val purchaseCount: Int,
     val lastPurchaseDate: Long?
+)
+
+@Serializable
+@Entity(tableName = "DashboardTileOrder")
+data class DashboardTileOrder(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val tileLabel: String,
+    val tileRoute: String,
+    val sortOrder: Int
 )

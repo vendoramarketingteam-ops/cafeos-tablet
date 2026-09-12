@@ -14,10 +14,13 @@ import androidx.room.withTransaction
 import com.cafeos.tablet.data.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -138,6 +141,15 @@ class CafeViewModel(application: Application) : AndroidViewModel(application) {
         syncManager.requestFullSync()
     }
 
+    fun saveTileOrders(tileLabelRoutes: List<Pair<String, String>>) {
+        viewModelScope.launch {
+            dao.clearTileOrders()
+            dao.insertTileOrders(tileLabelRoutes.mapIndexed { idx, (label, route) ->
+                DashboardTileOrder(tileLabel = label, tileRoute = route, sortOrder = idx)
+            })
+        }
+    }
+
     override fun onCleared() {
         textToSpeech.stop()
         textToSpeech.shutdown()
@@ -191,6 +203,19 @@ class CafeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     val allOrders = dao.getAllOrders()
+    val tileOrders = dao.getTileOrders()
+    /**
+     * Today's served (non-cancelled) order count — the gamified HUD "gem" counter
+     * (spec US2). Read-only derivation over [allOrders]; recomputes automatically
+     * when [placeOrder] inserts via the same DAO Flow (no business logic changed).
+     * Also the single source for the victory dialog's "served today" tally.
+     */
+    val todayOrderCount: StateFlow<Int> = allOrders
+        .map { list ->
+            val today = startOfToday()
+            list.count { it.createdAt >= today && it.status != "CANCELLED" }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
     val ingredients = dao.getAllIngredients()
     val allPayments = dao.getAllPayments()
     val allCustomers = dao.getAllCustomers()

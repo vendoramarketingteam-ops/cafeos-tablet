@@ -53,9 +53,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         TableSection::class,
         ProductStation::class,
         SupplierIngredientPrice::class,
-        OutboxEntry::class
+        ComboLinkEntity::class,
+        OutboxEntry::class,
+        DashboardTileOrder::class
     ],
-    version = 20,
+    version = 22,
     exportSchema = false
 )
 abstract class CafeDatabase : RoomDatabase() {
@@ -169,6 +171,41 @@ abstract class CafeDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v20 -> v21 (spec 002): ComboLink table for the MLBB-style Item Shop
+         * checkout screen. Stores addon links for each base product: which
+         * addon products are recommended, their price delta in cents, sort
+         * order, and whether they are required in the combo.
+         */
+        private val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `ComboLink` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`baseProductId` INTEGER NOT NULL, " +
+                        "`addonProductId` INTEGER NOT NULL, " +
+                        "`deltaPriceCents` INTEGER NOT NULL, " +
+                        "`sortOrder` INTEGER NOT NULL DEFAULT 0, " +
+                        "`required` INTEGER NOT NULL DEFAULT 0, " +
+                        "`createdAt` INTEGER NOT NULL)"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_ComboLink_baseProductId ON ComboLink(baseProductId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_ComboLink_addonProductId ON ComboLink(addonProductId)")
+            }
+        }
+
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `DashboardTileOrder` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`tileLabel` TEXT NOT NULL, " +
+                        "`tileRoute` TEXT NOT NULL, " +
+                        "`sortOrder` INTEGER NOT NULL)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): CafeDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -177,7 +214,7 @@ abstract class CafeDatabase : RoomDatabase() {
                     "pebot_database"
                 )
                 // Real migrations for every versioned change going forward.
-                .addMigrations(MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
+                .addMigrations(MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
                 // Legacy fallback: builds before v17 had no migration history and
                 // destructive upgrades were the established behavior; keeping the
                 // fallback until the v17 baseline is in the field lets old alpha

@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -65,10 +68,9 @@ fun ConnectionScreen(viewModel: CafeViewModel) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        GameCard(
+            rarity = Rarity.COMMON,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text("Connection Setup", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -188,10 +190,9 @@ fun ConnectionScreen(viewModel: CafeViewModel) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        GameCard(
+            rarity = Rarity.COMMON,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text("How to connect another tablet", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)

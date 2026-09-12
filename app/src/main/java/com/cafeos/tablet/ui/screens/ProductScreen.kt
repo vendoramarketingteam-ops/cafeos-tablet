@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -30,11 +33,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.*
 import com.cafeos.tablet.ui.CafeViewModel
 import com.cafeos.tablet.ui.components.PremiumPanel
 import com.cafeos.tablet.ui.components.PremiumScreen
+import com.cafeos.tablet.ui.components.rarityByPrice
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
 import java.io.InputStream
@@ -60,106 +65,84 @@ fun ProductScreen(viewModel: CafeViewModel) {
     var searchQuery by remember { mutableStateOf("") }
 
     PremiumScreen {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Column {
-                Text("Menu Catalog", style = MaterialTheme.typography.headlineMedium, color = PosInk, fontWeight = FontWeight.Bold)
-                Text("Products, options, and availability", style = MaterialTheme.typography.bodySmall, color = PosInkSoft)
+        // ── Buttons in a single row, 3 equal-width columns ──
+        val tonalColors = ButtonDefaults.filledTonalButtonColors(containerColor = PosAccentSoft, contentColor = PosAccent)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Dimens.space8),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            FilledTonalButton(
+                onClick = { showIngredientForm = true },
+                modifier = Modifier.weight(1f).heightIn(min = Dimens.touchMin),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
+                colors = tonalColors
+            ) {
+                Icon(Icons.Default.Inventory, contentDescription = null)
+                Spacer(Modifier.width(Dimens.space8))
+                Text("Ingredients")
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalButton(
-                    onClick = { showIngredientForm = true },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = PosAccentSoft, contentColor = PosAccent)
-                ) {
-                    Icon(Icons.Default.Inventory, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Ingredients")
-                }
-                FilledTonalButton(
-                    onClick = { showCategoryForm = true },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = PosAccentSoft, contentColor = PosAccent)
-                ) {
-                    Icon(Icons.Default.Category, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Categories")
-                }
-                Button(
-                    onClick = {
-                        editingProduct = null
-                        showProductForm = true
-                    },
-                    enabled = categories.isNotEmpty(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("New Product")
-                }
+            FilledTonalButton(
+                onClick = { showCategoryForm = true },
+                modifier = Modifier.weight(1f).heightIn(min = Dimens.touchMin),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
+                colors = tonalColors
+            ) {
+                Icon(Icons.Default.Category, contentDescription = null)
+                Spacer(Modifier.width(Dimens.space8))
+                Text("Categories")
+            }
+            Button(
+                onClick = {
+                    editingProduct = null
+                    showProductForm = true
+                },
+                enabled = categories.isNotEmpty(),
+                modifier = Modifier.weight(1f).heightIn(min = Dimens.touchMin),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
+                colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(Dimens.space8))
+                Text("New Product", fontWeight = FontWeight.SemiBold)
             }
         }
 
         if (categories.isEmpty()) {
-            PremiumPanel(title = "Start with a category") {
-                Text("Create a category before adding products to your catalog.", color = PosInkSoft, style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(12.dp))
-                Text("Use Categories above to create your first menu group.", color = PosAccent, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+            PremiumPanel(title = "Create a category first") {
+                Text("Create a category first", color = PosInkSoft, style = MaterialTheme.typography.bodyMedium)
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            Card(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = PosSurface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp)) {
-                    Text("CATALOG", style = MaterialTheme.typography.labelSmall, color = PosInkSoft, fontWeight = FontWeight.Bold)
-                    Text("${products.size}", style = MaterialTheme.typography.headlineSmall, color = PosInk, fontWeight = FontWeight.Bold)
-                }
-            }
-            Card(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = PosAccentSoft),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp)) {
-                    Text("GROUPS", style = MaterialTheme.typography.labelSmall, color = PosAccentHover, fontWeight = FontWeight.Bold)
-                    Text("${categories.size}", style = MaterialTheme.typography.headlineSmall, color = PosAccent, fontWeight = FontWeight.Bold)
-                }
-            }
-            Card(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = PosSurface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp)) {
-                    Text("LIVE MENU", style = MaterialTheme.typography.labelSmall, color = PosInkSoft, fontWeight = FontWeight.Bold)
-                    Text("${products.count { it.available }}/${products.size}", style = MaterialTheme.typography.headlineSmall, color = PosAccent, fontWeight = FontWeight.Bold)
-                }
-            }
+        // Stat tiles in a single Row (equal weight) — never stacked in a Column
+        // so the product list is visible above the fold on the reference device.
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Dimens.space8),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            StatCard("CATALOG", products.size.toString(), PosInkSoft, PosInk, Modifier.weight(1f))
+            StatCard("GROUPS", categories.size.toString(), PosAccentHover, PosAccent, Modifier.weight(1f))
+            StatCard("LIVE MENU", "${products.count { it.available }}/${products.size}", PosInkSoft, PosAccent, Modifier.weight(1f))
         }
 
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = selectedTab,
             containerColor = PosSurface,
-            contentColor = PosInk
+            contentColor = PosInk,
+            edgePadding = Dimens.space16,
+            divider = {}
         ) {
             Tab(
                 selected = selectedTab == 0,
                 onClick = { selectedTab = 0 },
-                text = { Text("Products") },
+                text = { Text("Products", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 selectedContentColor = PosAccent,
                 unselectedContentColor = PosInkSoft
             )
             Tab(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                text = { Text("Options") },
+                text = { Text("Options", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 selectedContentColor = PosAccent,
                 unselectedContentColor = PosInkSoft
             )
@@ -174,7 +157,7 @@ fun ProductScreen(viewModel: CafeViewModel) {
                     placeholder = { Text("Search the catalog") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = PosInkSoft) },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = PosAccent,
                         unfocusedBorderColor = PosBorder,
@@ -194,7 +177,7 @@ fun ProductScreen(viewModel: CafeViewModel) {
                     Tab(
                         selected = selectedCategoryId == null,
                         onClick = { selectedCategoryId = null },
-                        text = { Text("All") },
+                        text = { Text("All", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         selectedContentColor = PosAccent,
                         unselectedContentColor = PosInkSoft
                     )
@@ -202,14 +185,14 @@ fun ProductScreen(viewModel: CafeViewModel) {
                         Tab(
                             selected = selectedCategoryId == category.id,
                             onClick = { selectedCategoryId = category.id },
-                            text = { Text(category.name) },
+                            text = { Text(category.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             selectedContentColor = PosAccent,
                             unselectedContentColor = PosInkSoft
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
 
                 val filtered = products.filter { product ->
                     (selectedCategoryId == null || product.categoryId == selectedCategoryId) &&
@@ -218,10 +201,10 @@ fun ProductScreen(viewModel: CafeViewModel) {
 
                 LazyVerticalGrid(
                     modifier = Modifier.weight(1f),
-                    columns = GridCells.Adaptive(minSize = 240.dp),
-                    contentPadding = PaddingValues(bottom = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    columns = GridCells.Fixed(3),
+                    contentPadding = PaddingValues(bottom = Dimens.space20),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.space12),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.space12)
                 ) {
                     items(filtered, key = { it.id }) { product ->
                         ProductCardEditable(
@@ -258,18 +241,18 @@ fun ProductScreen(viewModel: CafeViewModel) {
                         Text("Option Groups", style = MaterialTheme.typography.titleLarge, color = PosPaper)
                         Button(
                             onClick = { editingGroup = null; showCreateDialog = true },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(Dimens.radiusMedium),
                             colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(Dimens.space16))
+                            Spacer(modifier = Modifier.width(Dimens.space8))
                             Text("Add Group", fontWeight = FontWeight.SemiBold)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space16))
 
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
                         items(productOptionGroups) { group ->
                             OptionGroupCard(
                                 viewModel = viewModel,
@@ -342,6 +325,16 @@ fun ProductScreen(viewModel: CafeViewModel) {
 }
 
 @Composable
+fun StatCard(label: String, value: String, labelColor: Color, valueColor: Color, modifier: Modifier = Modifier) {
+    GameCard(modifier = modifier, rarity = Rarity.COMMON) {
+        Column(modifier = Modifier.padding(horizontal = Dimens.space12, vertical = 11.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = labelColor, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(value, style = MaterialTheme.typography.headlineSmall, color = valueColor, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
 fun ProductCardEditable(product: Product, category: Category?, formatter: NumberFormat, onEdit: () -> Unit, onDelete: () -> Unit) {
     val imageBitmap = remember(product.imageUrl) {
         val path = product.imageUrl ?: return@remember null
@@ -349,17 +342,15 @@ fun ProductCardEditable(product: Product, category: Category?, formatter: Number
         if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
     }
 
-    Card(
+    GameCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        rarity = rarityByPrice(product.price)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(Dimens.space12),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.space12),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (imageBitmap != null) {
@@ -368,14 +359,14 @@ fun ProductCardEditable(product: Product, category: Category?, formatter: Number
                     contentDescription = product.name,
                     modifier = Modifier
                         .size(72.dp)
-                        .background(PosAccentSoft, RoundedCornerShape(12.dp)),
+                        .background(PosAccentSoft, RoundedCornerShape(Dimens.radiusMedium)),
                     contentScale = ContentScale.Crop
                 )
             } else {
                 Box(
                     modifier = Modifier
                         .size(72.dp)
-                        .background(PosAccentSoft, RoundedCornerShape(12.dp)),
+                        .background(PosAccentSoft, RoundedCornerShape(Dimens.radiusMedium)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Default.Image, contentDescription = null, tint = PosInkSoft)
@@ -387,7 +378,7 @@ fun ProductCardEditable(product: Product, category: Category?, formatter: Number
                 category?.let {
                     Text(it.name, style = MaterialTheme.typography.bodySmall, color = PosMuted)
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space8), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = formatter.format(product.price),
                         style = MaterialTheme.typography.labelLarge,
@@ -395,8 +386,8 @@ fun ProductCardEditable(product: Product, category: Category?, formatter: Number
                         fontWeight = FontWeight.Bold
                     )
                     if (!product.available) {
-                        Surface(color = PosDangerSoft, shape = RoundedCornerShape(20.dp)) {
-                            Text("Unavailable", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = PosDanger, style = MaterialTheme.typography.labelSmall)
+                        Surface(color = PosDangerSoft, shape = RoundedCornerShape(Dimens.radiusXLarge)) {
+                            Text("Unavailable", modifier = Modifier.padding(horizontal = Dimens.space8, vertical = Dimens.space4), color = PosDanger, style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
@@ -484,9 +475,9 @@ fun ProductFormDialog(product: Product?, viewModel: CafeViewModel, categories: L
             Column(modifier = Modifier.height(500.dp)) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                     OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
                     OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
                     var expanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                         OutlinedTextField(value = categories.find { it.id == selectedCategoryId }?.name ?: "", onValueChange = {}, readOnly = true, label = { Text("Category") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }, modifier = Modifier.fillMaxWidth().menuAnchor(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
@@ -494,19 +485,17 @@ fun ProductFormDialog(product: Product?, viewModel: CafeViewModel, categories: L
                             categories.forEach { cat -> DropdownMenuItem(text = { Text(cat.name) }, onClick = { selectedCategoryId = cat.id; expanded = false }) }
                         }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
 
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = PosAccentSoft),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    GameCard(
+                        rarity = Rarity.COMMON,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                .padding(Dimens.space12),
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.space12),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             if (imageBitmap != null) {
@@ -515,14 +504,14 @@ fun ProductFormDialog(product: Product?, viewModel: CafeViewModel, categories: L
                                     contentDescription = "Product image preview",
                                     modifier = Modifier
                                         .size(76.dp)
-                                        .background(PosMuted, RoundedCornerShape(12.dp)),
+                                        .background(PosMuted, RoundedCornerShape(Dimens.radiusMedium)),
                                     contentScale = ContentScale.Crop
                                 )
                             } else {
                                 Box(
                                     modifier = Modifier
                                         .size(76.dp)
-                                        .background(PosMuted, RoundedCornerShape(12.dp)),
+                                        .background(PosMuted, RoundedCornerShape(Dimens.radiusMedium)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(Icons.Default.Image, contentDescription = null, tint = PosInkSoft)
@@ -536,19 +525,19 @@ fun ProductFormDialog(product: Product?, viewModel: CafeViewModel, categories: L
 
                             OutlinedButton(
                                 onClick = { imagePicker.launch("image/*") },
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, PosAccent)
+                                shape = RoundedCornerShape(Dimens.radiusMedium),
+                                border = BorderStroke(Dimens.borderWidth, PosAccent)
                             ) {
                                 Icon(Icons.Default.Image, contentDescription = null, tint = PosAccent)
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(Dimens.space8))
                                 Text("Select", color = PosAccent)
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                         OutlinedTextField(value = prepTime, onValueChange = { prepTime = it.filter { c -> c.isDigit() } }, label = { Text("Prep Time (min)") }, modifier = Modifier.weight(1f), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                         var stationExpanded by remember { mutableStateOf(false) }
                         ExposedDropdownMenuBox(expanded = stationExpanded, onExpandedChange = { stationExpanded = it }) {
@@ -560,21 +549,21 @@ fun ProductFormDialog(product: Product?, viewModel: CafeViewModel, categories: L
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = available, onCheckedChange = { available = it }, colors = CheckboxDefaults.colors(checkedColor = PosAccent))
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Dimens.space8))
                         Text("Available", color = MaterialTheme.colorScheme.onSurface)
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space16))
                     Text("Pricing", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
 
                     OutlinedTextField(value = capitalCost, onValueChange = { capitalCost = it; updateCalculatedPrice() }, label = { Text("Capital Cost (₱)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Spacer(modifier = Modifier.height(Dimens.space12))
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                         var marginExpanded by remember { mutableStateOf(false) }
                         ExposedDropdownMenuBox(expanded = marginExpanded, onExpandedChange = { marginExpanded = it }) {
                             OutlinedTextField(value = marginType, onValueChange = {}, readOnly = true, label = { Text("Margin Type") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = marginExpanded) }, modifier = Modifier.weight(1f).menuAnchor(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
@@ -584,31 +573,31 @@ fun ProductFormDialog(product: Product?, viewModel: CafeViewModel, categories: L
                         }
                         OutlinedTextField(value = marginValue, onValueChange = { marginValue = it; updateCalculatedPrice() }, label = { Text("Margin Value") }, modifier = Modifier.weight(1f), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = vatExempt, onCheckedChange = { vatExempt = it; updateCalculatedPrice() }, colors = CheckboxDefaults.colors(checkedColor = PosAccent))
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Dimens.space8))
                         Text("VAT Exempt", color = MaterialTheme.colorScheme.onSurface)
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     Text("Calculated Price: ${currencyFormatter.format(calculatedPrice)}", style = MaterialTheme.typography.bodyMedium, color = PosAccent, fontWeight = FontWeight.Bold)
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space16))
                     Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Recipe", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.weight(1f))
-                        Button(onClick = { showRecipeEditor = true }, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = PosAccent)) { Text("Edit Recipe") }
+                        Button(onClick = { showRecipeEditor = true }, shape = RoundedCornerShape(Dimens.radiusMedium), colors = ButtonDefaults.buttonColors(containerColor = PosAccent)) { Text("Edit Recipe") }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     Text("Capital from recipe: ${currencyFormatter.format(capitalCost.toDoubleOrNull() ?: 0.0)}", style = MaterialTheme.typography.bodySmall, color = PosMuted)
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space16))
                     Text("Linked option groups", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     if (optionGroups.isEmpty()) {
                         Text("No option groups available yet.", style = MaterialTheme.typography.bodySmall, color = PosMuted)
                     } else {
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.space8), verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                             optionGroups.forEach { group ->
                                 FilterChip(
                                     selected = linkedGroupIds.contains(group.id),
@@ -662,7 +651,7 @@ fun ProductFormDialog(product: Product?, viewModel: CafeViewModel, categories: L
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Dimens.radiusMedium)
             ) {
                 Text("Save", fontWeight = FontWeight.SemiBold)
             }
@@ -673,7 +662,7 @@ fun ProductFormDialog(product: Product?, viewModel: CafeViewModel, categories: L
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 
     if (showRecipeEditor) {
@@ -702,7 +691,7 @@ fun RecipeEditorDialog(ingredients: List<Ingredient>, initialRecipe: List<Pair<I
         title = { Text("Recipe", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.height(420.dp)) {
-                LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                     items(ingredients) { ingredient ->
                         val existing = recipe.find { it.first == ingredient.id }
                         val qty = existing?.second ?: 0.0
@@ -718,7 +707,7 @@ fun RecipeEditorDialog(ingredients: List<Ingredient>, initialRecipe: List<Pair<I
                                 Text("${ingredient.baseUnit} · ₱${ingredient.costPerUnit}/unit", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
 
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
                                 IconButton(
                                     onClick = { recipe = recipe.map { if (it.first == ingredient.id) it.first to (it.second - step).coerceAtLeast(0.0) else it }.toMutableList() },
                                     modifier = Modifier.size(30.dp)
@@ -753,13 +742,13 @@ fun RecipeEditorDialog(ingredients: List<Ingredient>, initialRecipe: List<Pair<I
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(recipe) }, colors = ButtonDefaults.buttonColors(containerColor = PosAccent), shape = RoundedCornerShape(12.dp)) { Text("Save Recipe", fontWeight = FontWeight.SemiBold) }
+            Button(onClick = { onSave(recipe) }, colors = ButtonDefaults.buttonColors(containerColor = PosAccent), shape = RoundedCornerShape(Dimens.radiusMedium)) { Text("Save Recipe", fontWeight = FontWeight.SemiBold) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }
 
@@ -775,10 +764,10 @@ fun CategoryManagerDialog(categories: List<Category>, onDismiss: () -> Unit, onS
         title = { Text("Categories", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                LazyColumn(modifier = Modifier.height(200.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(modifier = Modifier.height(200.dp), verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                     items(categories) { cat ->
-                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                            Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Dimens.radiusMedium), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                            Row(modifier = Modifier.fillMaxWidth().padding(Dimens.space12), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(cat.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                                     cat.icon?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -795,8 +784,8 @@ fun CategoryManagerDialog(categories: List<Category>, onDismiss: () -> Unit, onS
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Spacer(modifier = Modifier.height(Dimens.space16))
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                     OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.weight(1f), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                     OutlinedTextField(value = icon, onValueChange = { icon = it }, label = { Text("Icon") }, modifier = Modifier.weight(1f), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                 }
@@ -814,7 +803,7 @@ fun CategoryManagerDialog(categories: List<Category>, onDismiss: () -> Unit, onS
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Dimens.radiusMedium)
             ) {
                 Text(if (editing == null) "Add Category" else "Save Category", fontWeight = FontWeight.SemiBold)
             }
@@ -825,6 +814,6 @@ fun CategoryManagerDialog(categories: List<Category>, onDismiss: () -> Unit, onS
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }

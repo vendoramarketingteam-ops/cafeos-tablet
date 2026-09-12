@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,10 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.*
 import com.cafeos.tablet.ui.CafeViewModel
 import com.cafeos.tablet.ui.components.PremiumScreen
+import com.cafeos.tablet.ui.components.rarityByPoints
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -42,25 +47,27 @@ fun LoyaltyScreen(viewModel: CafeViewModel) {
         Text("Loyalty Program", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
         Text("Manage customers, vouchers, and rewards", style = MaterialTheme.typography.bodySmall, color = PosMuted)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.space16))
 
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = selectedTab,
             containerColor = PosCoffeeLight,
-            contentColor = PosGold
+            contentColor = PosGold,
+            edgePadding = Dimens.space16,
+            divider = {}
         ) {
             tabs.forEachIndexed { index, title ->
                 Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    text = { Text(title) },
+                    text = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     selectedContentColor = PosGold,
                     unselectedContentColor = PosMuted
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.space16))
 
         when (selectedTab) {
             0 -> LoyaltyCustomersTab(viewModel, customers, currencyFormatter, dateFormatter)
@@ -96,16 +103,16 @@ fun LoyaltyCustomersTab(
             Text("Customers", style = MaterialTheme.typography.titleLarge, color = PosPaper)
             Button(
                 onClick = { showAddCustomerDialog = true },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(Dimens.space16))
+                Spacer(modifier = Modifier.width(Dimens.space8))
                 Text("Add Customer", fontWeight = FontWeight.SemiBold)
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
 
         OutlinedTextField(
             value = searchQuery,
@@ -123,9 +130,9 @@ fun LoyaltyCustomersTab(
             singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
 
-            LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
             items(filteredCustomers) { customer ->
                 CustomerLoyaltyCard(
                     customer = customer,
@@ -166,16 +173,14 @@ fun CustomerLoyaltyCard(
     currencyFormatter: NumberFormat,
     onAddPoints: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    GameCard(
+        rarity = rarityByPoints(customer.loyaltyPoints),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Dimens.space16),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -189,7 +194,7 @@ fun CustomerLoyaltyCard(
                 )
             }
             TextButton(onClick = onAddPoints) {
-                Icon(Icons.Default.Edit, contentDescription = "Add Points", tint = PosGold, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Edit, contentDescription = "Add Points", tint = PosGold, modifier = Modifier.size(Dimens.space16))
             }
         }
     }
@@ -221,18 +226,18 @@ fun LoyaltyVouchersTab(
             Text("Loyalty Vouchers", style = MaterialTheme.typography.titleLarge, color = PosPaper)
             Button(
                 onClick = { editingVoucher = null; showAddDialog = true },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(Dimens.radiusMedium),
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(Dimens.space16))
+                Spacer(modifier = Modifier.width(Dimens.space8))
                 Text("Add Voucher", fontWeight = FontWeight.SemiBold)
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
             items(allVouchers) { voucher ->
                 VoucherCard(
                     voucher = voucher,
@@ -275,17 +280,16 @@ fun LoyaltySettingsTab(viewModel: CafeViewModel) {
     Column(modifier = Modifier.fillMaxSize()) {
         Text("Loyalty Settings", style = MaterialTheme.typography.titleLarge, color = PosPaper)
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
             items(loyaltySettings) { setting ->
-                Card(
+                GameCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    rarity = Rarity.COMMON
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+
+                    Column(modifier = Modifier.padding(Dimens.space16)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -298,14 +302,14 @@ fun LoyaltySettingsTab(viewModel: CafeViewModel) {
                             }
                             Row {
                                 TextButton(onClick = { editingSetting = setting; showAddDialog = true }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PosGold, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PosGold, modifier = Modifier.size(Dimens.space16))
                                 }
                                 TextButton(onClick = {
                                     scope.launch {
                                         viewModel.deleteLoyaltySetting(setting)
                                     }
                                 }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(Dimens.space16))
                                 }
                             }
                         }
@@ -314,15 +318,15 @@ fun LoyaltySettingsTab(viewModel: CafeViewModel) {
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
         Button(
             onClick = { editingSetting = null; showAddDialog = true },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(Dimens.radiusMedium),
             colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(Dimens.space16))
+            Spacer(modifier = Modifier.width(Dimens.space8))
             Text("Add Setting", fontWeight = FontWeight.SemiBold)
         }
     }
@@ -357,9 +361,9 @@ fun LoyaltySettingFormDialog(
         text = {
             Column {
                 OutlinedTextField(value = key, onValueChange = { key = it }, label = { Text("Key") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = value, onValueChange = { value = it }, label = { Text("Value") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = scope, onValueChange = { scope = it }, label = { Text("Scope") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
             }
         },
@@ -371,7 +375,7 @@ fun LoyaltySettingFormDialog(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Dimens.radiusMedium)
             ) {
                 Text("Save", fontWeight = FontWeight.SemiBold)
             }
@@ -380,6 +384,6 @@ fun LoyaltySettingFormDialog(
             TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }

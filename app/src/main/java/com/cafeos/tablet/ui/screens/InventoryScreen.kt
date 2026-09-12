@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -32,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalConfiguration
 import com.cafeos.tablet.data.*
 import com.cafeos.tablet.ui.CafeViewModel
 import com.cafeos.tablet.ui.ProductCapacityInfo
@@ -55,21 +59,23 @@ fun InventoryScreen(viewModel: CafeViewModel) {
 
     PremiumScreen {
         PremiumHeader("Inventory", "Keep stock levels accurate and calm")
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = selectedTab,
             containerColor = PosCoffeeLight,
-            contentColor = PosGold
+            contentColor = PosGold,
+            edgePadding = Dimens.space16,
+            divider = {}
         ) {
             tabs.forEachIndexed { index, title ->
                 Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    text = { Text(title) }
+                    text = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.space16))
 
         when (selectedTab) {
             0 -> InventoryProductsTab(viewModel)
@@ -111,25 +117,30 @@ fun InventoryProductsTab(viewModel: CafeViewModel) {
         producible = map
     }
 
-    // Product stock cards in a fixed 5-per-row grid.
+    // Mobile-first: single-column cards on portrait phones so product names
+    // don't wrap into vertical word stacks; 5-up grid on tablet.
+    val isPortraitPhone = LocalConfiguration.current.screenWidthDp < 600
+    val gridColumns = if (isPortraitPhone) GridCells.Fixed(1) else GridCells.Fixed(5)
+
     LazyVerticalGrid(
-        columns = GridCells.Fixed(5),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        columns = gridColumns,
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.space12),
+        verticalArrangement = Arrangement.spacedBy(Dimens.space12)
     ) {
         gridItems(products) { product ->
             val units = producible[product.id]
 
-            Card(
+            GameCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                rarity = if (units == null) Rarity.COMMON else if (units <= 0) Rarity.EPIC else if (units <= 3) Rarity.RARE else Rarity.COMMON
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp)
+                        .padding(Dimens.space12)
                 ) {
                     Text(
                         product.name,
@@ -140,7 +151,7 @@ fun InventoryProductsTab(viewModel: CafeViewModel) {
                         overflow = TextOverflow.Ellipsis
                     )
                     Text("₱${product.price}", style = MaterialTheme.typography.bodySmall, color = PosMuted)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     Text(
                         text = when {
                             units == null -> "—"
@@ -184,38 +195,48 @@ fun InventoryIngredientsTab(viewModel: CafeViewModel) {
         uri?.let { scope.launch { importMessage = viewModel.importIngredientsCsv(it) } }
     }
 
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedButton(onClick = { templateLauncher.launch("ingredients-template.csv") }, modifier = Modifier.weight(1f)) { Text("Template") }
-            OutlinedButton(onClick = { importLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel")) }, modifier = Modifier.weight(1f)) { Text("Import") }
-            Button(onClick = { exportLauncher.launch("ingredients.csv") }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = PosAccent)) { Text("Export") }
+    Column(modifier = Modifier.fillMaxSize()) {
+        val isPortraitPhone = LocalConfiguration.current.screenWidthDp < 600
+        if (isPortraitPhone) {
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.space8), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { templateLauncher.launch("ingredients-template.csv") }, modifier = Modifier.fillMaxWidth().heightIn(min = Dimens.touchMin), shape = RoundedCornerShape(Dimens.radiusMedium)) { Text("Template") }
+                OutlinedButton(onClick = { importLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel")) }, modifier = Modifier.fillMaxWidth().heightIn(min = Dimens.touchMin), shape = RoundedCornerShape(Dimens.radiusMedium)) { Text("Import") }
+                Button(onClick = { exportLauncher.launch("ingredients.csv") }, modifier = Modifier.fillMaxWidth().heightIn(min = Dimens.touchMin), shape = RoundedCornerShape(Dimens.radiusMedium), colors = ButtonDefaults.buttonColors(containerColor = PosAccent)) { Text("Export") }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = Dimens.space12),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.space8)
+            ) {
+                OutlinedButton(onClick = { templateLauncher.launch("ingredients-template.csv") }, modifier = Modifier.weight(1f).heightIn(min = Dimens.touchMin), shape = RoundedCornerShape(Dimens.radiusMedium)) { Text("Template") }
+                OutlinedButton(onClick = { importLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel")) }, modifier = Modifier.weight(1f).heightIn(min = Dimens.touchMin), shape = RoundedCornerShape(Dimens.radiusMedium)) { Text("Import") }
+                Button(onClick = { exportLauncher.launch("ingredients.csv") }, modifier = Modifier.weight(1f).heightIn(min = Dimens.touchMin), shape = RoundedCornerShape(Dimens.radiusMedium), colors = ButtonDefaults.buttonColors(containerColor = PosAccent)) { Text("Export") }
+            }
         }
-        importMessage?.let { Text(it, color = PosAccent, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
-        // Ingredients in a dense 5-per-row grid (same as the Products tab) so a
-        // tablet shows the whole pantry at a glance; tap a card to adjust stock.
+        importMessage?.let { Text(it, color = PosAccent, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = Dimens.space8)) }
+        // Mobile-first: single-column cards on portrait phones so ingredient names
+        // don't wrap into vertical word stacks; 5-up grid on tablet.
+        val gridColumns = if (isPortraitPhone) GridCells.Fixed(1) else GridCells.Fixed(5)
         LazyVerticalGrid(
-            columns = GridCells.Fixed(5),
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            columns = gridColumns,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.space8),
+            verticalArrangement = Arrangement.spacedBy(Dimens.space8)
         ) {
             gridItems(ingredients) { ingredient ->
                 val isLow = ingredient.currentStock <= ingredient.minStock
-                Card(
+                GameCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showAdjustDialog = ingredient },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    rarity = if (isLow) Rarity.EPIC else Rarity.COMMON
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp)
+                            .padding(Dimens.space12)
                     ) {
                         Text(
                             ingredient.name,
@@ -226,7 +247,7 @@ fun InventoryIngredientsTab(viewModel: CafeViewModel) {
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(ingredient.category, style = MaterialTheme.typography.bodySmall, color = PosMuted)
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Dimens.space8))
                         Text(
                             text = "${trimStock(ingredient.currentStock)} ${ingredient.baseUnit}",
                             style = MaterialTheme.typography.titleLarge,
@@ -239,7 +260,7 @@ fun InventoryIngredientsTab(viewModel: CafeViewModel) {
                         }
                         ingredient.lastSupplierId?.let { supplierId ->
                             supplierById[supplierId]?.let { supplier ->
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(Dimens.space4))
                                 Text(
                                     "Last from: ${supplier.name}",
                                     color = PosAccent,
@@ -261,7 +282,7 @@ fun InventoryIngredientsTab(viewModel: CafeViewModel) {
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier
                                     .clickable { historyIngredient = ingredient }
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    .padding(horizontal = Dimens.space4, vertical = 2.dp)
                             )
                         }
                     }
@@ -269,39 +290,39 @@ fun InventoryIngredientsTab(viewModel: CafeViewModel) {
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
         Button(
             onClick = { showAddDialog = true },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(Dimens.radiusMedium),
             colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(Dimens.space16))
+            Spacer(modifier = Modifier.width(Dimens.space8))
             Text("Add Ingredient", fontWeight = FontWeight.SemiBold)
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Dimens.space8))
         OutlinedButton(
             onClick = { showPurchaseDialog = true },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, PosGold)
+            shape = RoundedCornerShape(Dimens.radiusMedium),
+            border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, PosGold)
         ) {
-            Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp), tint = PosGold)
-            Spacer(modifier = Modifier.width(8.dp))
+            Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(Dimens.space16), tint = PosGold)
+            Spacer(modifier = Modifier.width(Dimens.space8))
             Text("Record Purchase", color = PosGold, fontWeight = FontWeight.SemiBold)
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Dimens.space8))
         OutlinedButton(
             onClick = { showBulkDialog = true },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, PosInfo)
+            shape = RoundedCornerShape(Dimens.radiusMedium),
+            border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, PosInfo)
         ) {
-            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp), tint = PosInfo)
-            Spacer(modifier = Modifier.width(8.dp))
+            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(Dimens.space16), tint = PosInfo)
+            Spacer(modifier = Modifier.width(Dimens.space8))
             Text("Bulk Adjust Stock", color = PosInfo, fontWeight = FontWeight.SemiBold)
         }
     }
@@ -370,24 +391,26 @@ fun InventorySuppliersTab(viewModel: CafeViewModel) {
     var detailSupplier by remember { mutableStateOf<Supplier?>(null) }
     val scope = rememberCoroutineScope()
 
-    Column {
+    Column(modifier = Modifier.fillMaxSize()) {
+        val isPortraitPhone = LocalConfiguration.current.screenWidthDp < 600
+        val gridColumns = if (isPortraitPhone) GridCells.Fixed(1) else GridCells.Fixed(5)
         LazyVerticalGrid(
-            columns = GridCells.Fixed(5),
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            columns = gridColumns,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.space8),
+            verticalArrangement = Arrangement.spacedBy(Dimens.space8)
         ) {
             gridItems(suppliers) { supplier ->
                 Column {
-                    Card(
+                    GameCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { detailSupplier = supplier },
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        rarity = if (supplier.status == "ACTIVE") Rarity.COMMON else Rarity.UNCOMMON
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(Dimens.space12)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -402,14 +425,14 @@ fun InventorySuppliersTab(viewModel: CafeViewModel) {
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(Dimens.space4))
                                 Surface(
                                     color = if (supplier.status == "ACTIVE") PosAccent.copy(alpha = 0.15f) else PosDanger.copy(alpha = 0.15f),
-                                    shape = RoundedCornerShape(20.dp)
+                                    shape = RoundedCornerShape(Dimens.radiusXLarge)
                                 ) {
                                     Text(
                                         text = supplier.status,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        modifier = Modifier.padding(horizontal = Dimens.space8, vertical = 3.dp),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = if (supplier.status == "ACTIVE") PosAccent else PosDanger,
                                         fontWeight = FontWeight.Bold,
@@ -427,25 +450,25 @@ fun InventorySuppliersTab(viewModel: CafeViewModel) {
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { editingSupplier = supplier; showAddDialog = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PosGold, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PosGold, modifier = Modifier.size(Dimens.space16))
                         }
                         TextButton(onClick = { scope.launch { viewModel.deleteSupplier(supplier) } }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = PosDanger, modifier = Modifier.size(Dimens.space16))
                         }
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.space12))
         Button(
             onClick = { editingSupplier = null; showAddDialog = true },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(Dimens.radiusMedium),
             colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(Dimens.space16))
+            Spacer(modifier = Modifier.width(Dimens.space8))
             Text("Add Supplier", fontWeight = FontWeight.SemiBold)
         }
     }
@@ -492,31 +515,36 @@ fun InventoryCapacityTab(viewModel: CafeViewModel) {
         }
     }
 
+    val isPortraitPhone = LocalConfiguration.current.screenWidthDp < 600
+    val gridColumns = if (isPortraitPhone) GridCells.Fixed(1) else GridCells.Fixed(5)
+
     LazyVerticalGrid(
-        columns = GridCells.Fixed(5),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        columns = gridColumns,
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.space8),
+        verticalArrangement = Arrangement.spacedBy(Dimens.space8)
     ) {
         gridItems(capacity) { cap ->
-            Card(
+            GameCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                rarity = Rarity.COMMON
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
+
+                Column(modifier = Modifier.padding(Dimens.space12)) {
                     Text(cap.productName, style = MaterialTheme.typography.titleMedium, color = PosPaper, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(Dimens.progressHeight))
                     Text("Can produce: ${cap.producibleUnits} units", style = MaterialTheme.typography.bodyMedium, color = PosPaper)
                     Text("Limited by: ${cap.limitingIngredient}", style = MaterialTheme.typography.bodySmall, color = PosMuted, maxLines = 2)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     LinearProgressIndicator(
                         progress = (cap.producibleUnits / 100.0).coerceIn(0.0, 1.0).toFloat(),
                         modifier = Modifier.fillMaxWidth(),
                         color = if (cap.producibleUnits > 0) PosAccent else PosDanger,
                         trackColor = PosMuted
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space4))
                     Text(
                         text = "${cap.producibleUnits} product(s)",
                         style = MaterialTheme.typography.bodySmall,
@@ -544,15 +572,15 @@ fun AddIngredientDialog(onDismiss: () -> Unit, onSave: (String, String, String, 
         text = {
             Column {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = category, onValueChange = { category = it }, label = { Text("Category") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = baseUnit, onValueChange = { baseUnit = it }, label = { Text("Base Unit (g, ml, pcs)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = currentStockText, onValueChange = { currentStockText = it }, label = { Text("Current Stock") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = minStockText, onValueChange = { minStockText = it }, label = { Text("Minimum Stock") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = costPerUnitText, onValueChange = { costPerUnitText = it }, label = { Text("Cost Per Unit (₱)") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
             }
         },
@@ -567,7 +595,7 @@ fun AddIngredientDialog(onDismiss: () -> Unit, onSave: (String, String, String, 
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Dimens.radiusMedium)
             ) {
                 Text("Save", fontWeight = FontWeight.SemiBold)
             }
@@ -578,7 +606,7 @@ fun AddIngredientDialog(onDismiss: () -> Unit, onSave: (String, String, String, 
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }
 
@@ -596,11 +624,11 @@ fun AdjustStockDialog(ingredient: Ingredient, onDismiss: () -> Unit, onConfirm: 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(selected = isAdd, onClick = { isAdd = true }, colors = RadioButtonDefaults.colors(selectedColor = PosAccent))
                     Text("Add Stock", color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(Dimens.space16))
                     RadioButton(selected = !isAdd, onClick = { isAdd = false }, colors = RadioButtonDefaults.colors(selectedColor = PosDanger))
                     Text("Reduce (Waste)", color = MaterialTheme.colorScheme.onSurface)
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
@@ -608,7 +636,7 @@ fun AdjustStockDialog(ingredient: Ingredient, onDismiss: () -> Unit, onConfirm: 
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
@@ -625,7 +653,7 @@ fun AdjustStockDialog(ingredient: Ingredient, onDismiss: () -> Unit, onConfirm: 
                     onConfirm(if (isAdd) delta else -delta, notes)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Dimens.radiusMedium)
             ) {
                 Text("Confirm", fontWeight = FontWeight.SemiBold)
             }
@@ -636,7 +664,7 @@ fun AdjustStockDialog(ingredient: Ingredient, onDismiss: () -> Unit, onConfirm: 
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }
 
@@ -648,15 +676,14 @@ fun StockHistoryTab(viewModel: CafeViewModel) {
     val ingrMap = ingredients.associateBy { it.id }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
             items(transactions) { txn ->
                 val ing = ingrMap[txn.ingredientId]
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                GameCard(
+                    rarity = Rarity.COMMON,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(modifier = Modifier.padding(Dimens.space12)) {
                         Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(ing?.name ?: "Unknown", style = MaterialTheme.typography.bodyMedium, color = PosPaper, fontWeight = FontWeight.SemiBold)
@@ -683,15 +710,14 @@ fun PurchasesTab(viewModel: CafeViewModel) {
     val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     val ingrMap = ingredients.associateBy { it.id }
 
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
         items(purchases) { txn ->
             val ing = ingrMap[txn.ingredientId]
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+            GameCard(
+                rarity = Rarity.COMMON,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
+                Column(modifier = Modifier.padding(Dimens.space12)) {
                     Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(ing?.name ?: "Unknown ingredient", style = MaterialTheme.typography.bodyMedium, color = PosPaper, fontWeight = FontWeight.SemiBold)
@@ -728,15 +754,15 @@ fun SupplierFormDialog(supplier: Supplier?, onDismiss: () -> Unit, onSave: (Supp
         text = {
             Column {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = contactPerson, onValueChange = { contactPerson = it }, label = { Text("Contact Person") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
             }
         },
@@ -753,7 +779,7 @@ fun SupplierFormDialog(supplier: Supplier?, onDismiss: () -> Unit, onSave: (Supp
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Dimens.radiusMedium)
             ) {
                 Text("Save", fontWeight = FontWeight.SemiBold)
             }
@@ -764,7 +790,7 @@ fun SupplierFormDialog(supplier: Supplier?, onDismiss: () -> Unit, onSave: (Supp
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }
 
@@ -775,25 +801,25 @@ fun LowStockAlertTab(viewModel: CafeViewModel) {
 
     if (lowStockIngredients.isEmpty()) {
         Box(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(Dimens.space16),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = PosAccent, modifier = Modifier.size(48.dp))
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.space8))
                 Text("All ingredients are sufficiently stocked.", style = MaterialTheme.typography.bodyLarge, color = PosMuted)
             }
         }
     } else {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
             items(lowStockIngredients) { ingredient ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(Dimens.radiusLarge),
                     colors = CardDefaults.cardColors(containerColor = PosDangerSoft),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(Dimens.space16)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -805,18 +831,18 @@ fun LowStockAlertTab(viewModel: CafeViewModel) {
                             }
                             Surface(
                                 color = PosDanger.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(20.dp)
+                                shape = RoundedCornerShape(Dimens.radiusXLarge)
                             ) {
                                 Text(
                                     "LOW STOCK",
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    modifier = Modifier.padding(horizontal = Dimens.space12, vertical = Dimens.space4),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = PosDanger,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Dimens.space8))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
@@ -870,17 +896,17 @@ fun PurchaseIngredientDialog(
         text = {
             Column(modifier = Modifier.verticalScroll(scrollState)) {
                 Text("Ingredient", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(Dimens.progressHeight))
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { ingredientExpanded = !ingredientExpanded; supplierExpanded = false },
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
                     color = MaterialTheme.colorScheme.surface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, MaterialTheme.colorScheme.outline)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+                        modifier = Modifier.padding(horizontal = Dimens.space12, vertical = Dimens.space12),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -897,11 +923,11 @@ fun PurchaseIngredientDialog(
                     }
                 }
                 if (ingredientExpanded) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    GameCard(
+                        rarity = Rarity.COMMON,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                        Column(modifier = Modifier.padding(vertical = Dimens.space4)) {
                             ingredients.forEach { ing ->
                                 Row(
                                     modifier = Modifier
@@ -912,7 +938,7 @@ fun PurchaseIngredientDialog(
                                             quantityText = ""
                                             ingredientExpanded = false
                                         }
-                                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                                        .padding(horizontal = Dimens.space12, vertical = Dimens.space8)
                                 ) {
                                     Text(ing.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                                     Spacer(modifier = Modifier.weight(1f))
@@ -922,20 +948,20 @@ fun PurchaseIngredientDialog(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
 
                 Text("Supplier (optional)", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(Dimens.progressHeight))
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { supplierExpanded = !supplierExpanded; ingredientExpanded = false },
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
                     color = MaterialTheme.colorScheme.surface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, MaterialTheme.colorScheme.outline)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+                        modifier = Modifier.padding(horizontal = Dimens.space12, vertical = Dimens.space12),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -952,16 +978,16 @@ fun PurchaseIngredientDialog(
                     }
                 }
                 if (supplierExpanded) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    GameCard(
+                        rarity = Rarity.COMMON,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                        Column(modifier = Modifier.padding(vertical = Dimens.space4)) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { selectedSupplierId = null; supplierExpanded = false }
-                                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                                    .padding(horizontal = Dimens.space12, vertical = Dimens.space8)
                             ) {
                                 Text("No supplier", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                             }
@@ -970,7 +996,7 @@ fun PurchaseIngredientDialog(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { selectedSupplierId = sup.id; supplierExpanded = false }
-                                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                                        .padding(horizontal = Dimens.space12, vertical = Dimens.space8)
                                 ) {
                                     Text(sup.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                                 }
@@ -978,13 +1004,13 @@ fun PurchaseIngredientDialog(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
 
                 if (selectedIngredient != null) {
                     Text("Purchase unit", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(Dimens.progressHeight))
                     val unitOptions = PurchaseUnits.purchaseUnitOptions(selectedIngredient.baseUnit)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                         unitOptions.forEach { unit ->
                             FilterChip(
                                 selected = purchaseUnit == unit,
@@ -995,24 +1021,24 @@ fun PurchaseIngredientDialog(
                         }
                     }
                     if (!PurchaseUnits.canConvert(selectedIngredient.baseUnit, purchaseUnit)) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Dimens.space4))
                         Text(
                             "Unit \"$purchaseUnit\" cannot be converted to the ingredient's base unit (${selectedIngredient.baseUnit}).",
                             color = PosDanger, style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
                 }
 
                 OutlinedTextField(value = quantityText, onValueChange = { quantityText = it }, label = { Text("Quantity received (${if (purchaseUnit.isNotBlank()) purchaseUnit else "units"})") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = totalCostText, onValueChange = { totalCostText = it }, label = { Text("Total purchase cost (₱)") }, supportingText = { Text("Unit cost is calculated automatically — you only enter the amount you paid") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                 val baseUnit = selectedIngredient?.baseUnit
                 val qtyParsed = quantityText.toDoubleOrNull()
                 val totalParsed = totalCostText.toDoubleOrNull()
                 if (baseUnit != null && purchaseUnit.isNotBlank() && qtyParsed != null && totalParsed != null && qtyParsed > 0.0 && totalParsed >= 0.0) {
                     val perBase = PurchaseUnits.unitCost(baseUnit, purchaseUnit, qtyParsed, totalParsed)
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(Dimens.progressHeight))
                     if (perBase != null) {
                         Text(
                             "Auto cost: ₱${"%.2f".format(totalParsed / qtyParsed)} per $purchaseUnit  ·  ₱${"%.2f".format(perBase)} per $baseUnit",
@@ -1022,10 +1048,10 @@ fun PurchaseIngredientDialog(
                         Text("Unit cost cannot be calculated for this unit combination.", color = PosDanger, style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                 validationError?.let {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space8))
                     Text(it, color = PosDanger, style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -1050,7 +1076,7 @@ fun PurchaseIngredientDialog(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(Dimens.radiusMedium)
             ) {
                 Text("Record", fontWeight = FontWeight.SemiBold)
             }
@@ -1059,7 +1085,7 @@ fun PurchaseIngredientDialog(
             TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }
 
@@ -1110,16 +1136,15 @@ fun IngredientHistoryDialog(
                         Text("No purchases recorded yet.", color = PosMuted)
                     }
                 } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                         items(rows.size) { index ->
                             val (txn, previousCost, change) = rows[index]
                             val supplier = txn.referenceId?.let { supplierById[it] }
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                            GameCard(
+                                rarity = Rarity.COMMON,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
+                                Column(modifier = Modifier.padding(Dimens.space12)) {
                                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                         Text(
                                             dateFormatter.format(Date(txn.createdAt)),
@@ -1139,13 +1164,13 @@ fun IngredientHistoryDialog(
                                         if (txn.type == "PURCHASE") {
                                             TextButton(
                                                 onClick = { pendingVoid = txn },
-                                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
+                                                contentPadding = PaddingValues(horizontal = Dimens.space4, vertical = 0.dp)
                                             ) {
                                                 Text("Void", color = PosDanger, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                             }
                                         }
                                     }
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Spacer(modifier = Modifier.height(Dimens.progressHeight))
                                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                         Column {
                                             val qtyDisplay = if (!txn.purchaseUnit.isNullOrBlank()) {
@@ -1184,7 +1209,7 @@ fun IngredientHistoryDialog(
             TextButton(onClick = onDismiss) { Text("Close", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 
     pendingVoid?.let { txn ->
@@ -1229,16 +1254,15 @@ fun SupplierDetailDialog(
                         Text("No purchases from this supplier yet.", color = PosMuted)
                     }
                 } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                         items(rows!!.size) { index ->
                             val row = rows!![index]
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = PosCoffeeLight)
+                            GameCard(
+                                rarity = Rarity.COMMON,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.space12, vertical = Dimens.space8),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -1273,6 +1297,6 @@ fun SupplierDetailDialog(
             TextButton(onClick = onDismiss) { Text("Close", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }

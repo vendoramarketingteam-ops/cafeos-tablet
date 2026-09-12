@@ -1,11 +1,20 @@
 package com.cafeos.tablet.ui.screens
 
+import android.content.Context
+import android.os.VibrationEffect
+import android.os.Vibrator
+
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -13,19 +22,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.*
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.GameCard
 import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
+import com.cafeos.tablet.ui.components.Rarity
 import com.cafeos.tablet.ui.theme.*
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.abs
 import kotlinx.coroutines.launch
 
 @Composable
@@ -41,16 +51,18 @@ fun LiveOrdersScreen(viewModel: CafeViewModel) {
 
     PremiumScreen {
         PremiumHeader("Live Orders", "Monitor preparation across the floor")
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = selectedTab,
             containerColor = PosCoffeeLight,
-            contentColor = PosGold
+            contentColor = PosGold,
+            edgePadding = Dimens.space16,
+            divider = {}
         ) {
             tabs.forEachIndexed { index, title ->
                 Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    text = { Text(title) }
+                    text = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 )
             }
         }
@@ -63,83 +75,116 @@ fun LiveOrdersScreen(viewModel: CafeViewModel) {
     }
 }
 
+private val kanbanLanes = listOf("PENDING", "PREPARING", "COMPLETED", "CANCELLED")
+
+private val kanbanLaneColors = mapOf(
+    "PENDING" to PosGold,
+    "PREPARING" to PosInfo,
+    "COMPLETED" to PosAccent,
+    "CANCELLED" to PosDanger
+)
+
+private val kanbanLaneTitles = mapOf(
+    "PENDING" to "Pending",
+    "PREPARING" to "Preparing",
+    "COMPLETED" to "Completed",
+    "CANCELLED" to "Cancelled"
+)
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun KanbanBoard(orders: List<Order>, currencyFormatter: NumberFormat, dateFormatter: SimpleDateFormat, viewModel: CafeViewModel) {
-    val columns = listOf("PENDING", "PREPARING", "COMPLETED", "CANCELLED")
-    val columnColors = mapOf(
-        "PENDING" to PosGold,
-        "PREPARING" to PosInfo,
-        "COMPLETED" to PosAccent,
-        "CANCELLED" to PosDanger
-    )
-    val columnTitles = mapOf(
-        "PENDING" to "Pending",
-        "PREPARING" to "Preparing",
-        "COMPLETED" to "Completed",
-        "CANCELLED" to "Cancelled"
-    )
+fun KanbanBoard(
+    orders: List<Order>,
+    currencyFormatter: NumberFormat,
+    dateFormatter: SimpleDateFormat,
+    viewModel: CafeViewModel
+) {
+    val pagerState = rememberPagerState { kanbanLanes.size }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
     var selectedOrder by remember { mutableStateOf<Order?>(null) }
     var pendingCancellation by remember { mutableStateOf<Order?>(null) }
 
     fun requestStatusChange(order: Order, newStatus: String) {
         if (newStatus == "CANCELLED") pendingCancellation = order
-        else viewModel.updateOrderStatus(order.id, newStatus)
+        else {
+            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+            viewModel.updateOrderStatus(order.id, newStatus)
+        }
     }
 
-    Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        columns.forEach { status ->
-            val columnOrders = orders.filter { it.status == status }
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            ) {
-                Surface(
-                    color = columnColors[status]?.copy(alpha = 0.15f) ?: PosCoffeeLight,
-                    shape = RoundedCornerShape(16.dp)
+    Column(modifier = Modifier.fillMaxSize()) {
+        // - Pill row: lane names + live counts
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = Dimens.space8, vertical = Dimens.space8),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.space8),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            kanbanLanes.forEachIndexed { index, status ->
+                val count = orders.count { it.status == status }
+                FilterChip(
+                    selected = pagerState.currentPage == index,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(index)
+                        }
+                    },
+                    label = {
+                        Text(
+                            text = "${kanbanLaneTitles[status] ?: status} ($count)",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = (kanbanLaneColors[status] ?: PosMuted).copy(alpha = 0.2f),
+                        selectedLabelColor = kanbanLaneColors[status] ?: PosMuted,
+                        containerColor = PosCoffeeLight,
+                        labelColor = PosMuted
+                    ),
+                    modifier = Modifier.height(Dimens.touchComfortable)
+                )
+            }
+        }
+
+        // - Pager: one lane per page
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            key = { kanbanLanes[it] }
+        ) { pageIndex ->
+            val status = kanbanLanes[pageIndex]
+            val laneOrders = orders.filter { it.status == status }
+
+            if (laneOrders.isEmpty()) {
+                KanbanEmptyState(
+                    status = status,
+                    laneColor = kanbanLaneColors[status] ?: PosMuted
+                )
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(Dimens.space8),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(Dimens.space8)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = columnTitles[status] ?: status,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = columnColors[status] ?: PosMuted,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Surface(
-                                color = columnColors[status] ?: PosMuted,
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    text = "${columnOrders.size}",
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = PosPaper
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxHeight()
-                        ) {
-                            items(columnOrders) { order ->
-                                KanbanOrderCard(
-                                    order = order,
-                                    currencyFormatter = currencyFormatter,
-                                    dateFormatter = dateFormatter,
-                                    onStatusChange = { newStatus ->
-                                        requestStatusChange(order, newStatus)
-                                    },
-                                    onClick = { selectedOrder = order }
-                                )
-                            }
-                        }
+                    items(laneOrders, key = { it.id }) { order ->
+                        KanbanOrderCard(
+                            order = order,
+                            currencyFormatter = currencyFormatter,
+                            dateFormatter = dateFormatter,
+                            onStatusChange = { newStatus ->
+                                requestStatusChange(order, newStatus)
+                            },
+                            onClick = { selectedOrder = order }
+                        )
                     }
                 }
             }
@@ -174,6 +219,43 @@ fun KanbanBoard(orders: List<Order>, currencyFormatter: NumberFormat, dateFormat
 }
 
 @Composable
+fun KanbanEmptyState(status: String, laneColor: Color) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(PosCoffeeLight.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            val icon = when (status) {
+                "COMPLETED" -> Icons.Default.CheckCircle
+                "CANCELLED" -> Icons.Default.Cancel
+                else -> Icons.Default.Inbox
+            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = laneColor.copy(alpha = 0.5f),
+                modifier = Modifier.size(Dimens.iconXL)
+            )
+            Spacer(modifier = Modifier.height(Dimens.space12))
+            Text(
+                text = when (status) {
+                    "PENDING" -> "No pending orders"
+                    "PREPARING" -> "No orders being prepared"
+                    "COMPLETED" -> "All caught up"
+                    "CANCELLED" -> "No cancelled orders"
+                    else -> "Empty"
+                },
+                color = PosMuted,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun KanbanOrderCard(
     order: Order,
     currencyFormatter: NumberFormat,
@@ -181,103 +263,192 @@ fun KanbanOrderCard(
     onStatusChange: (String) -> Unit,
     onClick: () -> Unit
 ) {
-    val statusOrder = listOf("PENDING", "PREPARING", "COMPLETED", "CANCELLED")
+    val elapsedMin = ((System.currentTimeMillis() - order.createdAt) / 60000).toInt()
+    val urgencyColor = when {
+        elapsedMin <= 5 -> PosAccent      // green: 0-5 min
+        elapsedMin <= 15 -> PosGold       // amber: 6-15 min
+        else -> PosDanger                 // red: 15+ min
+    }
 
-    Card(
+    // Available status transitions: next lane + Cancel
+    val currentIdx = kanbanLanes.indexOf(order.status)
+    val availableTransitions = buildList {
+        if (currentIdx >= 0 && currentIdx < kanbanLanes.lastIndex) {
+            add(kanbanLanes[currentIdx + 1])
+        }
+        if (currentIdx in 0..1) add("CANCELLED")
+    }.distinct()
+
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    GameCard(
+        rarity = Rarity.COMMON,
         modifier = Modifier
             .fillMaxWidth()
-            .pointerInput(order.id) {
-                var dragX = 0f
-                // Horizontal-only drag detection: vertical swipes stay with the
-                // column's LazyColumn so the kanban board can actually scroll.
-                detectHorizontalDragGestures(
-                    onDragStart = { dragX = 0f },
-                    onHorizontalDrag = { _, dragAmount ->
-                        dragX += dragAmount
-                    },
-                    onDragEnd = {
-                        val index = statusOrder.indexOf(order.status)
-                        val target = when {
-                            dragX > 110f && index < statusOrder.lastIndex -> statusOrder[index + 1]
-                            dragX < -110f && index > 0 -> statusOrder[index - 1]
-                            else -> order.status
-                        }
-                        if (target != order.status) onStatusChange(target)
-                    }
-                )
-            }
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(Dimens.space12)) {
+            // - Header: order info + urgency dot + status badge + overflow menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(Icons.Default.DragHandle, contentDescription = null, tint = PosMuted, modifier = Modifier.size(16.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.space4)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(Dimens.space12)
+                            .background(urgencyColor, shape = RoundedCornerShape(Dimens.radiusPill))
+                    )
+                    Icon(
+                        Icons.Default.DragHandle,
+                        contentDescription = null,
+                        tint = PosMuted,
+                        modifier = Modifier.size(Dimens.space16)
+                    )
                     Column {
-                        Text(order.orderNumber, style = MaterialTheme.typography.labelMedium, color = PosPaper, fontWeight = FontWeight.Bold)
-                        Text(order.tableLocation ?: order.tableId?.let { "Table $it" } ?: "Takeaway", style = MaterialTheme.typography.labelSmall, color = PosAccent, fontWeight = FontWeight.Bold)
                         Text(
-                            when (order.orderType) {
-                                "DELIVERY" -> "🛵 Delivery"
-                                "TAKEOUT" -> "🥡 Takeout"
-                                else -> "🍽️ Dine-in"
-                            },
+                            order.orderNumber,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = PosPaper,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            order.tableLocation ?: order.tableId?.let { "Table $it" } ?: "Takeaway",
                             style = MaterialTheme.typography.labelSmall,
-                            color = PosGold,
+                            color = PosAccent,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.space4)
+                ) {
+                    Surface(
+                        color = kanbanLaneColors[order.status] ?: PosMuted,
+                        shape = RoundedCornerShape(Dimens.radiusMedium)
+                    ) {
+                        Text(
+                            text = order.status,
+                            modifier = Modifier.padding(horizontal = Dimens.space8, vertical = Dimens.space4),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = PosPaper,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Overflow menu for non-drag status changes
+                    if (availableTransitions.isNotEmpty()) {
+                        IconButton(
+                            onClick = { menuExpanded = true },
+                            modifier = Modifier.size(Dimens.touchMin)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = PosMuted
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            availableTransitions.forEach { newStatus ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            kanbanLaneTitles[newStatus] ?: newStatus,
+                                            color = kanbanLaneColors[newStatus] ?: PosMuted,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onStatusChange(newStatus)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Dimens.progressHeight))
+
+            Text(
+                if (order.customerName.isBlank()) "Walk-in Customer" else order.customerName,
+                style = MaterialTheme.typography.bodySmall,
+                color = PosPaper,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                when (order.orderType) {
+                    "DELIVERY" -> "🛵 Delivery"
+                    "TAKEOUT" -> "🥡 Takeout"
+                    else -> "🍽️ Dine-in"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = PosGold,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(Dimens.space8))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    currencyFormatter.format(order.totalAmount),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = PosGold,
+                    fontWeight = FontWeight.Bold
+                )
                 Surface(
-                    color = when (order.status) {
-                        "PENDING" -> PosGold
-                        "PREPARING" -> PosInfo
-                        "COMPLETED" -> PosAccent
-                        "CANCELLED" -> PosDanger
-                        else -> PosMuted
-                    },
-                    shape = RoundedCornerShape(10.dp)
+                    color = urgencyColor.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(Dimens.radiusPill)
                 ) {
                     Text(
-                        text = order.status,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        text = "${elapsedMin}m",
                         style = MaterialTheme.typography.labelSmall,
-                        color = PosPaper,
-                        fontWeight = FontWeight.Bold
+                        color = urgencyColor,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = Dimens.space8, vertical = Dimens.space4)
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(if (order.customerName.isBlank()) "Walk-in Customer" else order.customerName, style = MaterialTheme.typography.bodySmall, color = PosPaper, fontWeight = FontWeight.Medium)
-            Text("Drag left/right to move", style = MaterialTheme.typography.labelSmall, color = PosMuted)
-            Text(dateFormatter.format(Date(order.createdAt)), style = MaterialTheme.typography.labelSmall, color = PosMuted)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(currencyFormatter.format(order.totalAmount), style = MaterialTheme.typography.labelMedium, color = PosGold, fontWeight = FontWeight.Bold)
-            if (order.status == "PENDING" || order.status == "PREPARING") {
-                Spacer(modifier = Modifier.height(8.dp))
+
+            if (order.status == "PENDING") {
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 Button(
-                    onClick = {
-                        onStatusChange(if (order.status == "PENDING") "PREPARING" else "COMPLETED")
-                    },
+                    onClick = { onStatusChange("PREPARING") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (order.status == "PENDING") PosGold else PosAccent
-                    )
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
+                    colors = ButtonDefaults.buttonColors(containerColor = PosInfo)
                 ) {
-                    Text(if (order.status == "PENDING") "Start Preparing" else "Mark Ready", fontWeight = FontWeight.SemiBold)
+                    Text("Start Preparing", fontWeight = FontWeight.SemiBold)
+                }
+            }
+            if (order.status == "PREPARING") {
+                Spacer(modifier = Modifier.height(Dimens.space12))
+                Button(
+                    onClick = { onStatusChange("COMPLETED") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
+                    colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
+                ) {
+                    Text("Mark Ready", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
     }
 }
-
 @Composable
 fun OrderDetailDialog(order: Order, viewModel: CafeViewModel, onDismiss: () -> Unit, onStatusChange: (String) -> Unit) {
     var items by remember { mutableStateOf<List<OrderItem>>(emptyList()) }
@@ -313,11 +484,11 @@ fun OrderDetailDialog(order: Order, viewModel: CafeViewModel, onDismiss: () -> U
                         "CANCELLED" -> PosDanger
                         else -> PosMuted
                     },
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(Dimens.radiusXLarge)
                 ) {
                     Text(
                         text = order.status,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = Dimens.space12, vertical = Dimens.space4),
                         style = MaterialTheme.typography.labelMedium,
                         color = PosPaper,
                         fontWeight = FontWeight.Bold
@@ -327,30 +498,30 @@ fun OrderDetailDialog(order: Order, viewModel: CafeViewModel, onDismiss: () -> U
         },
         text = {
             Column(modifier = Modifier.height(400.dp)) {
-                LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
                     item {
                         Column {
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text("Customer:", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(order.customerName, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(Dimens.space4))
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text("Seated at:", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(order.tableLocation ?: order.tableId?.let { "Table $it" } ?: "Takeaway", color = PosAccent, fontWeight = FontWeight.Bold)
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(Dimens.space4))
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text("Total:", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text("₱${"%.2f".format(order.totalAmount)}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(Dimens.space4))
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text("Payment:", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(order.paymentMethod, color = MaterialTheme.colorScheme.onSurface)
                             }
                             if (order.discountAmount > 0) {
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(Dimens.space4))
                                 Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                     Text("Discount:", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text("-₱${"%.2f".format(order.discountAmount)}", color = PosAccent)
@@ -365,7 +536,7 @@ fun OrderDetailDialog(order: Order, viewModel: CafeViewModel, onDismiss: () -> U
 
                     if (loading) {
                         item {
-                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            Box(modifier = Modifier.fillMaxWidth().padding(Dimens.space24), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(color = PosAccent)
                             }
                         }
@@ -388,7 +559,7 @@ fun OrderDetailDialog(order: Order, viewModel: CafeViewModel, onDismiss: () -> U
                                     }
                                 }
                                 Text("x${item.quantity}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(modifier = Modifier.width(16.dp))
+                                Spacer(modifier = Modifier.width(Dimens.space16))
                                 Text("₱${"%.2f".format(item.subtotal)}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                             }
                         }
@@ -397,7 +568,7 @@ fun OrderDetailDialog(order: Order, viewModel: CafeViewModel, onDismiss: () -> U
             }
         },
         confirmButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                 OutlinedButton(
                     onClick = {
                         scope.launch {
@@ -406,21 +577,21 @@ fun OrderDetailDialog(order: Order, viewModel: CafeViewModel, onDismiss: () -> U
                         }
                     },
                     enabled = !loading,
-                    shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PosBorder)
+                    shape = RoundedCornerShape(Dimens.space12),
+                    border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, PosBorder)
                 ) { Text("Print Receipt", color = PosGold) }
                 if (order.status == "PENDING") {
                     Button(
                         onClick = { onStatusChange("PREPARING") },
                         colors = ButtonDefaults.buttonColors(containerColor = PosInfo),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(Dimens.space12)
                     ) { Text("Start Preparing", fontWeight = FontWeight.SemiBold) }
                 }
                 if (order.status == "PREPARING") {
                     Button(
                         onClick = { onStatusChange("COMPLETED") },
                         colors = ButtonDefaults.buttonColors(containerColor = PosAccent),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(Dimens.space12)
                     ) { Text("Mark Ready", fontWeight = FontWeight.SemiBold) }
                 }
                 if (order.status != "CANCELLED") {
@@ -438,24 +609,24 @@ fun OrderDetailDialog(order: Order, viewModel: CafeViewModel, onDismiss: () -> U
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(Dimens.radiusXLarge)
     )
 }
 
 @Composable
 fun TablesTab(tables: List<CafeTable>, viewModel: CafeViewModel) {
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
         items(tables) { table ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(Dimens.space16),
                 colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(Dimens.space16),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -485,18 +656,18 @@ fun TablesTab(tables: List<CafeTable>, viewModel: CafeViewModel) {
 
 @Composable
 fun StationsTab(stations: List<Station>, viewModel: CafeViewModel) {
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
         items(stations) { station ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(Dimens.space16),
                 colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(Dimens.space16),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {

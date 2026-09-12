@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,9 +26,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.BusinessSettings
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.SettingsStore
 import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
@@ -67,7 +72,7 @@ fun SettingsScreen(viewModel: CafeViewModel) {
 
     PremiumScreen {
         PremiumHeader("Settings", "Workspace preferences and data controls")
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.space16))
 
         ScrollableTabRow(
             selectedTabIndex = selectedTab,
@@ -80,14 +85,14 @@ fun SettingsScreen(viewModel: CafeViewModel) {
                 Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    text = { Text(title) },
+                    text = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     selectedContentColor = Color.White,
                     unselectedContentColor = PosCream.copy(alpha = 0.72f)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.space16))
 
         when (selectedTab) {
             0 -> SystemSettingsContent(
@@ -138,38 +143,37 @@ fun VoiceSettingsContent(businessSettings: BusinessSettings?, onSave: (BusinessS
     var quotaMessage by remember { mutableStateOf(businessSettings?.voiceQuotaMessage ?: "Congratulations! Daily quota reached: {current} of {target}.") }
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        GameCard(
+            rarity = Rarity.COMMON,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+            Column(modifier = Modifier.padding(Dimens.space20)) {
                 Text("Voice Notifications", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Text("Enable Voice", color = MaterialTheme.colorScheme.onSurface)
                     Switch(checked = voiceEnabled, onCheckedChange = { voiceEnabled = it }, colors = SwitchDefaults.colors(checkedThumbColor = PosAccent))
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(Dimens.space24))
                 Text("Volume: ${(voiceVolume * 100).toInt()}%", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                 Slider(value = voiceVolume, onValueChange = { voiceVolume = it }, colors = SliderDefaults.colors(thumbColor = PosAccent, activeTrackColor = PosAccent))
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
                 Text("Speed: ${"%.1f".format(voiceSpeed)}x", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                 Slider(value = voiceSpeed, onValueChange = { voiceSpeed = it }, valueRange = 0.5f..2.0f, colors = SliderDefaults.colors(thumbColor = PosGold, activeTrackColor = PosGold))
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
                 OutlinedTextField(value = orderMessage, onValueChange = { orderMessage = it }, label = { Text("Order notification") }, supportingText = { Text("Use {order}, {customer}, and {table}") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(value = quotaMessage, onValueChange = { quotaMessage = it }, label = { Text("Quota notification") }, supportingText = { Text("Use {current} and {target}") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(Dimens.space24))
                 Button(
                     onClick = { onSave((businessSettings ?: BusinessSettings()).copy(voiceEnabled = voiceEnabled, voiceVolume = voiceVolume, voiceSpeed = voiceSpeed, voiceOrderMessage = orderMessage, voiceQuotaMessage = quotaMessage)) },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
                 ) {
                     Text("Save Voice Settings", fontWeight = FontWeight.SemiBold)
@@ -189,79 +193,138 @@ fun SystemSettingsContent(
     onImport: () -> Unit
 ) {
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        GameCard(
+            rarity = Rarity.COMMON,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+            Column(modifier = Modifier.padding(Dimens.space20)) {
                 Text("Data Management", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
 
                 OutlinedButton(
                     onClick = onExport,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !exporting,
-                    shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
+                    border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, MaterialTheme.colorScheme.outline)
                 ) {
                     if (exporting) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(Dimens.space16), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(Dimens.space8))
                         Text("Exporting...")
                     } else {
-                        Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(Dimens.space16))
+                        Spacer(modifier = Modifier.width(Dimens.space8))
                         Text("Export All Data")
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
 
                 OutlinedButton(
                     onClick = onImport,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !importing,
-                    shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
+                    border = androidx.compose.foundation.BorderStroke(Dimens.borderWidth, MaterialTheme.colorScheme.outline)
                 ) {
                     if (importing) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(Dimens.space16), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(Dimens.space8))
                         Text("Importing...")
                     } else {
-                        Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(Dimens.space16))
+                        Spacer(modifier = Modifier.width(Dimens.space8))
                         Text("Import Data")
                     }
                 }
 
                 exportPath?.let { path ->
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
                     Text(text = "Exported to: $path", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                 }
 
                 importResult?.let { result ->
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.space12))
                     Text(text = result, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(Dimens.space24))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        GameCard(
+            rarity = Rarity.COMMON,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+            Column(modifier = Modifier.padding(Dimens.space20)) {
                 Text("About", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.space8))
                 Text("Version 1.0.0", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Offline-first POS terminal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+
+        Spacer(modifier = Modifier.height(Dimens.space24))
+
+        GameCard(
+            rarity = Rarity.COMMON,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(Dimens.space20)) {
+                Text("UI Theme", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+                Text("Fast Mode disables animations for peak-hour speed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(Dimens.space16))
+
+                val uiMode by SettingsStore.uiMode.collectAsState()
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.space8), modifier = Modifier.fillMaxWidth()) {
+                    ThemeModeButton("Fast Mode", ThemeMode.FAST, uiMode) { SettingsStore.setUiMode(ThemeMode.FAST) }
+                    ThemeModeButton("Gamified", ThemeMode.GAMIFIED, uiMode) { SettingsStore.setUiMode(ThemeMode.GAMIFIED) }
+                    ThemeModeButton("Classic (revert)", ThemeMode.CLASSIC, uiMode) { SettingsStore.setUiMode(ThemeMode.CLASSIC) }
+                }
+
+                Spacer(modifier = Modifier.height(Dimens.space20))
+
+                val soundEnabled by SettingsStore.soundEnabled.collectAsState()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Game sound & haptics", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Cha-ching SFX + tap feedback (off in Fast Mode)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = soundEnabled,
+                        onCheckedChange = { SettingsStore.setSoundEnabled(it) },
+                        colors = SwitchDefaults.colors(checkedThumbColor = PosGold)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeModeButton(label: String, mode: ThemeMode, current: ThemeMode, onClick: () -> Unit) {
+    val selected = current == mode
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(Dimens.space40),
+        shape = RoundedCornerShape(Dimens.radiusMedium),
+        colors = if (selected)
+            ButtonDefaults.textButtonColors(containerColor = PosGold.copy(alpha = 0.18f))
+            else ButtonDefaults.textButtonColors()
+    ) {
+        Text(
+            label,
+            color = if (selected) PosGold else PosCream.copy(alpha = 0.78f),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+        )
     }
 }
 
@@ -277,53 +340,52 @@ fun BusinessSettingsContent(businessSettings: BusinessSettings?, onSave: (Busine
     var quotaTarget by remember { mutableStateOf((businessSettings?.dailyQuotaTarget ?: 0.0).toString()) }
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        GameCard(
+            rarity = Rarity.COMMON,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+            Column(modifier = Modifier.padding(Dimens.space20)) {
                 Text("Business Information", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
 
                 OutlinedTextField(
                     value = shopName, onValueChange = { shopName = it },
                     label = { Text("Shop Name") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(
                     value = tin, onValueChange = { tin = it },
                     label = { Text("BIR TIN") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(
                     value = branchCode, onValueChange = { branchCode = it },
                     label = { Text("Branch Code") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(
                     value = vatRate, onValueChange = { vatRate = it },
                     label = { Text("VAT Rate (%)") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(
                     value = studentPwdRate, onValueChange = { studentPwdRate = it.filter { c -> c.isDigit() || c == '.' } },
                     label = { Text("Student / PWD Discount (%)") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
                 Text("Daily Quota", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                     listOf("ORDERS", "REVENUE").forEach { mode ->
                         FilterChip(selected = quotaMode == mode, onClick = { quotaMode = mode }, label = { Text(if (mode == "ORDERS") "Products" else "Revenue") })
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.space8))
                 OutlinedTextField(
                     value = quotaTarget, onValueChange = { quotaTarget = it.filter { c -> c.isDigit() || c == '.' } },
                     label = { Text(if (quotaMode == "ORDERS") "Daily product target" else "Daily revenue target (₱)") },
@@ -331,11 +393,11 @@ fun BusinessSettingsContent(businessSettings: BusinessSettings?, onSave: (Busine
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
                 Button(
                     onClick = { onSave((businessSettings ?: BusinessSettings()).copy(shopName = shopName, tin = tin.ifBlank { null }, branchCode = branchCode.ifBlank { null }, vatRate = vatRate.toDoubleOrNull() ?: 12.0, studentPwdDiscountRate = studentPwdRate.toDoubleOrNull() ?: 20.0, dailyQuotaMode = quotaMode, dailyQuotaTarget = quotaTarget.toDoubleOrNull() ?: 0.0)) },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
                 ) {
                     Text("Save Business Settings", fontWeight = FontWeight.SemiBold)
@@ -373,43 +435,42 @@ fun PaymentSettingsContent(businessSettings: BusinessSettings?, onSave: (Busines
     }
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        GameCard(
+            rarity = Rarity.COMMON,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+            Column(modifier = Modifier.padding(Dimens.space20)) {
                 Text("Payment Methods", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
 
                 OutlinedTextField(
                     value = gcashName, onValueChange = { gcashName = it },
                     label = { Text("GCash Account Name") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.space8))
                 OutlinedButton(onClick = { gcashLauncher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.QrCode, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(Dimens.space8))
                     Text(if (gcashQrPath != null) "Change GCash QR" else "Upload GCash QR")
                 }
                 QrPreview(path = gcashQrPath, label = "GCash QR")
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
                 OutlinedTextField(
                     value = paymayaName, onValueChange = { paymayaName = it },
                     label = { Text("PayMaya Account Name") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.space8))
                 OutlinedButton(onClick = { paymayaLauncher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.QrCode, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(Dimens.space8))
                     Text(if (paymayaQrPath != null) "Change PayMaya QR" else "Upload PayMaya QR")
                 }
                 QrPreview(path = paymayaQrPath, label = "PayMaya QR")
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(Dimens.space24))
                 Button(
                     onClick = { 
                         onSave((businessSettings ?: BusinessSettings()).copy(
@@ -420,7 +481,7 @@ fun PaymentSettingsContent(businessSettings: BusinessSettings?, onSave: (Busines
                         )) 
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
                 ) {
                     Text("Save Payment Settings", fontWeight = FontWeight.SemiBold)
@@ -437,44 +498,43 @@ fun ReceiptSettingsContent(businessSettings: BusinessSettings?, onSave: (Busines
 var footerText by remember { mutableStateOf(businessSettings?.footerMessage ?: "Thank you for your visit!") }
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        GameCard(
+            rarity = Rarity.COMMON,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+            Column(modifier = Modifier.padding(Dimens.space20)) {
                 Text("Receipt / BIR Numbering", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
 
                 OutlinedTextField(
                     value = receiptPrefix, onValueChange = { receiptPrefix = it.uppercase() },
                     label = { Text("Receipt Prefix") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(
                     value = lastNumber, onValueChange = { lastNumber = it.filter { c -> c.isDigit() } },
                     label = { Text("Last Receipt Number") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.space8))
                 Text(
                     text = "Next receipt will be: ${receiptPrefix}-${((lastNumber.toIntOrNull() ?: 0) + 1).toString().padStart(6, '0')}",
                     style = MaterialTheme.typography.bodySmall,
                     color = PosMuted
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Dimens.space12))
                 OutlinedTextField(
                     value = footerText, onValueChange = { footerText = it },
                     label = { Text("Receipt Footer Message") }, modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline)
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.space16))
                 Button(
                     onClick = { onSave((businessSettings ?: BusinessSettings()).copy(receiptPrefix = receiptPrefix, lastReceiptNumber = lastNumber.toIntOrNull() ?: 0, footerMessage = footerText)) },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Dimens.radiusMedium),
                     colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
                 ) {
                     Text("Save Receipt Settings", fontWeight = FontWeight.SemiBold)
@@ -491,7 +551,7 @@ fun QrPreview(path: String?, label: String) {
     val bitmap = remember(path) {
         runCatching { BitmapFactory.decodeFile(path) }.getOrNull()
     }
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(Dimens.space8))
     if (bitmap != null) {
         Image(
             bitmap = bitmap.asImageBitmap(),

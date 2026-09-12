@@ -1,5 +1,8 @@
 package com.cafeos.tablet.ui.screens
 
+import com.cafeos.tablet.ui.components.GameCard
+import com.cafeos.tablet.ui.components.Rarity
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -147,12 +150,11 @@ fun CustomerAnalyticsScreen(viewModel: CafeViewModel) {
 
 @Composable
 fun MetricCard(modifier: Modifier = Modifier, title: String, value: String, color: androidx.compose.ui.graphics.Color) {
-    Card(
+    GameCard(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        rarity = Rarity.COMMON
     ) {
+
         Column(modifier = Modifier.padding(16.dp)) {
             Text(title, style = MaterialTheme.typography.labelMedium, color = PosMuted)
             Spacer(modifier = Modifier.height(4.dp))
@@ -170,12 +172,11 @@ fun TierCard(modifier: Modifier = Modifier, tier: String, count: Int, currencyFo
         else -> PosInkSoft
     }
 
-    Card(
+    GameCard(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        rarity = Rarity.COMMON
     ) {
+
         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 imageVector = if (tier == "VIP") Icons.Default.Star else Icons.Default.StarBorder,
@@ -191,12 +192,11 @@ fun TierCard(modifier: Modifier = Modifier, tier: String, count: Int, currencyFo
 
 @Composable
 fun CustomerSpendingCard(name: String, totalSpent: Double, orders: Int, currencyFormatter: NumberFormat) {
-    Card(
+    GameCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        rarity = Rarity.COMMON
     ) {
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -216,12 +216,11 @@ fun CustomerSpendingCard(name: String, totalSpent: Double, orders: Int, currency
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerCard(customer: Customer, currencyFormatter: NumberFormat) {
-    Card(
+    GameCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosCoffeeLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        rarity = Rarity.COMMON
     ) {
+
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
