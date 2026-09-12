@@ -2,23 +2,23 @@ package com.cafeos.tablet.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val PosInk = Color(0xFF1C1917)
-val PosInkSoft = Color(0xFF625D57)
-val PosPaper = Color(0xFF1C1917)
+val PosInk = Color(0xFF241A13)
+val PosInkSoft = Color(0xFF675C52)
+val PosPaper = Color(0xFF241A13)
 val PosSurface = Color(0xFFFFFFFF)
-val PosMuted = Color(0xFF918B84)
-val PosBorder = Color(0xFFDDD6C8)
-val PosAccent = Color(0xFF4A5D3A)
-val PosAccentHover = Color(0xFF34452A)
-val PosAccentSoft = Color(0xFFE7EEE2)
+val PosMuted = Color(0xFF8B8177)
+val PosBorder = Color(0xFFD8CDBE)
+val PosAccent = Color(0xFF526245)
+val PosAccentHover = Color(0xFF3E4C35)
+val PosAccentSoft = Color(0xFFE7EDE2)
 val PosDanger = Color(0xFFB3261E)
 val PosDangerSoft = Color(0xFFF6E4E2)
-val PosGold = Color(0xFFB58A4A)
+val PosGold = Color(0xFFB7863E)
 val PosInfo = Color(0xFF5B728A)
-val PosCoffee = Color(0xFFF5F3EE)
-val PosCoffeeLight = Color(0xFFFBFAF7)
-val PosCream = Color(0xFFF7F5F0)
-val PosCoffeeDeep = Color(0xFF23271F)
+val PosCoffee = Color(0xFFF3EEE6)
+val PosCoffeeLight = Color(0xFFFFFCF7)
+val PosCream = Color(0xFFF8F1E7)
+val PosCoffeeDeep = Color(0xFF2D211A)
 
 // --- Gamified (MOBA shop) tokens — extend, do not replace, the premium palette above ---
 

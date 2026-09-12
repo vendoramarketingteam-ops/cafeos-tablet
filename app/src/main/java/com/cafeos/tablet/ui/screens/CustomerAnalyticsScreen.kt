@@ -18,6 +18,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.Customer
@@ -32,6 +33,7 @@ import java.util.*
 
 @Composable
 fun CustomerAnalyticsScreen(viewModel: CafeViewModel) {
+    val compact = LocalConfiguration.current.screenWidthDp < Dimens.tabletBreakpoint.value
     val customers by viewModel.allCustomers.collectAsState(initial = emptyList())
     val orders by viewModel.allOrders.collectAsState(initial = emptyList())
     val loyaltyCards by viewModel.allLoyaltyCards.collectAsState(initial = emptyList())
@@ -61,14 +63,32 @@ fun CustomerAnalyticsScreen(viewModel: CafeViewModel) {
 
     PremiumScreen {
         PremiumHeader("Customer Analytics", "Understand loyalty and repeat visits")
-        Text("Customer Analytics", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
-        Text("Insights into customer behavior and loyalty", style = MaterialTheme.typography.bodyMedium, color = PosMuted, modifier = Modifier.padding(top = 4.dp))
-
-        Spacer(modifier = Modifier.height(24.dp))
 
         LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (compact) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        MetricCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = "Total Customers",
+                            value = "$totalUniqueCustomers",
+                            color = PosPaper
+                        )
+                        MetricCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = "New (30d)",
+                            value = "$newThisMonth",
+                            color = PosGold
+                        )
+                        MetricCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = "Avg Spend",
+                            value = currencyFormatter.format(avgSpent),
+                            color = PosPaper
+                        )
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     MetricCard(
                         modifier = Modifier.weight(1f),
                         title = "Total Customers",
@@ -87,6 +107,7 @@ fun CustomerAnalyticsScreen(viewModel: CafeViewModel) {
                         value = currencyFormatter.format(avgSpent),
                         color = PosPaper
                     )
+                    }
                 }
             }
 
@@ -94,14 +115,27 @@ fun CustomerAnalyticsScreen(viewModel: CafeViewModel) {
                 item {
                     Text("Loyalty Tiers", style = MaterialTheme.typography.titleLarge, color = PosPaper, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        tierCounts.entries.forEach { (tier, count) ->
+                    if (compact) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            tierCounts.entries.forEach { (tier, count) ->
+                                TierCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    tier = tier,
+                                    count = count,
+                                    currencyFormatter = currencyFormatter
+                                )
+                            }
+                        }
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            tierCounts.entries.forEach { (tier, count) ->
                             TierCard(
                                 modifier = Modifier.weight(1f),
                                 tier = tier,
                                 count = count,
                                 currencyFormatter = currencyFormatter
                             )
+                            }
                         }
                     }
                 }

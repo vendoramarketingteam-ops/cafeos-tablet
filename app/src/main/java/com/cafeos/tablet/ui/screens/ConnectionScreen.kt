@@ -4,6 +4,7 @@ import com.cafeos.tablet.ui.components.GameCard
 import com.cafeos.tablet.ui.components.Rarity
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,7 +78,10 @@ fun ConnectionScreen(viewModel: CafeViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text("Mode")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                ) {
                     FilterChip(
                         selected = selectedMode == "host",
                         onClick = { selectedMode = "host" },
@@ -93,7 +97,10 @@ fun ConnectionScreen(viewModel: CafeViewModel) {
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text("Role")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                ) {
                     FilterChip(
                         selected = selectedRole == "pos",
                         onClick = { selectedRole = "pos" },

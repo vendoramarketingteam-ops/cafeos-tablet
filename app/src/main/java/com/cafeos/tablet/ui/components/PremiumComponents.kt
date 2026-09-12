@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Circle
@@ -25,7 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.ui.theme.*
 
@@ -34,12 +37,16 @@ fun PremiumScreen(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val compact = LocalConfiguration.current.screenWidthDp < Dimens.tabletBreakpoint.value
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(PosCoffee)
-            .padding(horizontal = Dimens.space16, vertical = Dimens.space8),
-        verticalArrangement = Arrangement.spacedBy(Dimens.space8),
+            .padding(
+                horizontal = if (compact) Dimens.space12 else Dimens.space20,
+                vertical = if (compact) Dimens.space8 else Dimens.space12
+            ),
+        verticalArrangement = Arrangement.spacedBy(Dimens.space12),
         content = content
     )
 }
@@ -51,13 +58,11 @@ fun PremiumHeader(
     action: (@Composable () -> Unit)? = null
 ) {
     val classic = isClassic()
+    val compact = LocalConfiguration.current.screenWidthDp < Dimens.tabletBreakpoint.value
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        if (compact) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Dimens.space8)
             ) {
@@ -66,23 +71,65 @@ fun PremiumHeader(
                     title,
                     style = MaterialTheme.typography.headlineSmall,
                     color = if (classic) PosInk else PosPaper,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
             }
-            action?.invoke()
+            subtitle?.let {
+                Text(
+                    it,
+                    color = PosInkSoft,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = Dimens.space4)
+                )
+            }
+            action?.let {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Dimens.space8),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    it()
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.space8)
+                ) {
+                    if (!classic) GemIcon(modifier = Modifier.size(22.dp))
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = if (classic) PosInk else PosPaper,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                action?.invoke()
+            }
+            subtitle?.let {
+                Text(it, color = PosInkSoft, style = MaterialTheme.typography.labelMedium)
+            }
         }
         if (!classic) {
             Spacer(Modifier.height(Dimens.space8))
-            // MOBA "tavern plank" divider — neon in GAMIFIED, flat in FAST.
             Box(
                 Modifier
                     .fillMaxWidth()
                     .height(2.dp)
                     .background(if (isGamified()) glowColor() else PosBorder.copy(alpha = 0.5f))
             )
-        }
-        subtitle?.let {
-            Text(it, color = PosInkSoft, style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -102,6 +149,7 @@ fun PremiumPanel(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .widthIn(max = 1200.dp)
             .then(
                 if (classic) Modifier else Modifier.border(
                     width = if (gamified) 1.5.dp else 1.dp,

@@ -25,6 +25,7 @@ import com.cafeos.tablet.data.Product
 import com.cafeos.tablet.data.ProductStation
 import com.cafeos.tablet.data.Station
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
@@ -63,19 +64,7 @@ fun StationAssignmentScreen(viewModel: CafeViewModel) {
     val productMap = products.associateBy { it.id }
 
     PremiumScreen {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Station Assignment", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
-            IconButton(onClick = { /* Add station via SettingsScreen */ }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Station", tint = PosPaper)
-            }
-        }
-        Text("Route products to kitchen stations for focused display", style = MaterialTheme.typography.bodyMedium, color = PosMuted, modifier = Modifier.padding(top = 4.dp))
-
-        Spacer(modifier = Modifier.height(16.dp))
+        PremiumHeader("Station Assignment", "Route products to kitchen stations for focused display")
 
         if (stations.isEmpty()) {
             GameCard(
@@ -231,7 +220,7 @@ fun AssignProductDialog(
         onDismissRequest = onDismiss,
         title = { Text("Assign Product to Station", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.height(300.dp)) {
+            Column(modifier = Modifier.heightIn(max = 300.dp)) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchChange,

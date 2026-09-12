@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.Review
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
@@ -42,11 +43,12 @@ fun ReviewsScreen(viewModel: CafeViewModel) {
     }
 
     PremiumScreen {
-        Text("Product Reviews", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
-        Text("${reviews.size} total reviews", style = MaterialTheme.typography.bodyMedium, color = PosMuted, modifier = Modifier.padding(top = 4.dp))
+        PremiumHeader("Product Reviews", "${reviews.size} total reviews")
 
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.horizontalScroll(rememberScrollState())
+        ) {
             FilterChip(selected = !suggestionsOnly, onClick = { suggestionsOnly = false }, label = { Text("Reviews") }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = PosAccentSoft, selectedLabelColor = PosAccent))
             FilterChip(selected = suggestionsOnly, onClick = { suggestionsOnly = true }, label = { Text("Taste Suggestions") }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = PosAccentSoft, selectedLabelColor = PosAccent))
         }

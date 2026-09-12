@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
@@ -41,12 +42,10 @@ fun CustomerManagementScreen(viewModel: CafeViewModel) {
     }
 
     PremiumScreen {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Customers", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
+        PremiumHeader(
+            title = "Customers",
+            subtitle = "Manage profiles, visits, and loyalty",
+            action = {
             Button(
                 onClick = { showAddCustomerDialog = true },
                 shape = RoundedCornerShape(12.dp),
@@ -56,8 +55,8 @@ fun CustomerManagementScreen(viewModel: CafeViewModel) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Add Customer", fontWeight = FontWeight.SemiBold)
             }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
+            }
+        )
 
         OutlinedTextField(
             value = searchQuery,

@@ -32,11 +32,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.*
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumPanel
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.components.rarityByPrice
@@ -63,9 +65,10 @@ fun ProductScreen(viewModel: CafeViewModel) {
     var showIngredientForm by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
+    val compact = LocalConfiguration.current.screenWidthDp < Dimens.tabletBreakpoint.value
 
     PremiumScreen {
-        // ── Buttons in a single row, 3 equal-width columns ──
+        PremiumHeader("Products", "Manage the menu, categories, and stock recipes")
         val tonalColors = ButtonDefaults.filledTonalButtonColors(containerColor = PosAccentSoft, contentColor = PosAccent)
         Row(
             horizontalArrangement = Arrangement.spacedBy(Dimens.space8),
@@ -79,8 +82,8 @@ fun ProductScreen(viewModel: CafeViewModel) {
                 colors = tonalColors
             ) {
                 Icon(Icons.Default.Inventory, contentDescription = null)
-                Spacer(Modifier.width(Dimens.space8))
-                Text("Ingredients")
+                if (!compact) Spacer(Modifier.width(Dimens.space8))
+                Text(if (compact) "Stock" else "Ingredients", maxLines = 1)
             }
             FilledTonalButton(
                 onClick = { showCategoryForm = true },
@@ -89,8 +92,8 @@ fun ProductScreen(viewModel: CafeViewModel) {
                 colors = tonalColors
             ) {
                 Icon(Icons.Default.Category, contentDescription = null)
-                Spacer(Modifier.width(Dimens.space8))
-                Text("Categories")
+                if (!compact) Spacer(Modifier.width(Dimens.space8))
+                Text(if (compact) "Groups" else "Categories", maxLines = 1)
             }
             Button(
                 onClick = {
@@ -103,8 +106,8 @@ fun ProductScreen(viewModel: CafeViewModel) {
                 colors = ButtonDefaults.buttonColors(containerColor = PosAccent)
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(Modifier.width(Dimens.space8))
-                Text("New Product", fontWeight = FontWeight.SemiBold)
+                if (!compact) Spacer(Modifier.width(Dimens.space8))
+                Text(if (compact) "Add" else "New Product", fontWeight = FontWeight.SemiBold, maxLines = 1)
             }
         }
 
@@ -201,7 +204,7 @@ fun ProductScreen(viewModel: CafeViewModel) {
 
                 LazyVerticalGrid(
                     modifier = Modifier.weight(1f),
-                    columns = GridCells.Fixed(3),
+                    columns = GridCells.Adaptive(minSize = if (compact) 280.dp else 300.dp),
                     contentPadding = PaddingValues(bottom = Dimens.space20),
                     horizontalArrangement = Arrangement.spacedBy(Dimens.space12),
                     verticalArrangement = Arrangement.spacedBy(Dimens.space12)
@@ -472,7 +475,7 @@ fun ProductFormDialog(product: Product?, viewModel: CafeViewModel, categories: L
         onDismissRequest = onDismiss,
         title = { Text(if (product == null) "New Product" else "Edit Product", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.height(500.dp)) {
+            Column(modifier = Modifier.heightIn(max = 500.dp)) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                     OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PosAccent, unfocusedBorderColor = MaterialTheme.colorScheme.outline))
                     Spacer(modifier = Modifier.height(Dimens.space12))
@@ -690,7 +693,7 @@ fun RecipeEditorDialog(ingredients: List<Ingredient>, initialRecipe: List<Pair<I
         onDismissRequest = onDismiss,
         title = { Text("Recipe", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.height(420.dp)) {
+            Column(modifier = Modifier.heightIn(max = 420.dp)) {
                 LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                     items(ingredients) { ingredient ->
                         val existing = recipe.find { it.first == ingredient.id }
@@ -710,7 +713,7 @@ fun RecipeEditorDialog(ingredients: List<Ingredient>, initialRecipe: List<Pair<I
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.space4)) {
                                 IconButton(
                                     onClick = { recipe = recipe.map { if (it.first == ingredient.id) it.first to (it.second - step).coerceAtLeast(0.0) else it }.toMutableList() },
-                                    modifier = Modifier.size(30.dp)
+                                    modifier = Modifier.size(Dimens.touchMin)
                                 ) {
                                     Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = PosDanger)
                                 }
@@ -731,7 +734,7 @@ fun RecipeEditorDialog(ingredients: List<Ingredient>, initialRecipe: List<Pair<I
                                 Text(ingredient.baseUnit, style = MaterialTheme.typography.labelSmall, color = PosMuted)
                                 IconButton(
                                     onClick = { recipe = recipe.map { if (it.first == ingredient.id) it.first to (it.second + step) else it }.toMutableList() },
-                                    modifier = Modifier.size(30.dp)
+                                    modifier = Modifier.size(Dimens.touchMin)
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = "Increase", tint = PosAccent)
                                 }

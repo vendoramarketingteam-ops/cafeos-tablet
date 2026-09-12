@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -56,7 +58,7 @@ fun AppTopBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(Dimens.topBarHeight)
             .background(HubCream)
             .padding(horizontal = Dimens.space12),
         verticalAlignment = Alignment.CenterVertically,
@@ -69,13 +71,14 @@ fun AppTopBar(
             },
             modifier = Modifier
                 .background(HubEspresso, shape = RoundedCornerShape(Dimens.radiusXLarge))
-                .size(width = 72.dp, height = 36.dp)
+                .widthIn(min = Dimens.touchMin)
+                .height(Dimens.touchMin)
         ) {
             Icon(
                 imageVector = homeIcon,
                 contentDescription = "Home",
                 tint = HubCream,
-                modifier = Modifier.size(Dimens.space12)
+                modifier = Modifier.size(Dimens.iconSmall)
             )
             Spacer(modifier = Modifier.width(Dimens.space4))
             Text(
@@ -90,7 +93,10 @@ fun AppTopBar(
             text = title,
             fontSize = 17.sp,
             fontWeight = FontWeight.Medium,
-            color = HubEspresso  // matches HTML mockup --espresso
+            color = HubEspresso,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
         )
     }
 }

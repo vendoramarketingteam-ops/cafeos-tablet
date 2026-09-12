@@ -156,7 +156,7 @@ private fun ExpenseCategoriesDialog(
         onDismissRequest = onDismiss,
         title = { Text("Expense Categories", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.height(300.dp)) {
+            Column(modifier = Modifier.heightIn(max = 300.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = nameText,

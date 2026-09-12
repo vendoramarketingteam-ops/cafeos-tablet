@@ -17,8 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import java.text.SimpleDateFormat
@@ -30,10 +32,7 @@ fun AuditLogScreen(viewModel: CafeViewModel) {
     val dateFormatter = SimpleDateFormat("MMM dd, yyyy hh:mm:ss a", Locale.getDefault())
 
     PremiumScreen {
-        Text("Audit Logs", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
-        Text("Append-only event history", style = MaterialTheme.typography.bodyMedium, color = PosMuted, modifier = Modifier.padding(top = 4.dp))
-
-        Spacer(modifier = Modifier.height(16.dp))
+        PremiumHeader("Audit Logs", "Append-only event history")
 
         if (auditEvents.isEmpty()) {
             Box(
@@ -73,7 +72,10 @@ fun AuditEventCard(event: com.cafeos.tablet.data.AuditEvent, dateFormatter: Simp
                     text = event.eventType.uppercase(),
                     style = MaterialTheme.typography.titleSmall,
                     color = PosGold,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
                 Text(
                     text = dateFormatter.format(Date(event.createdAt)),

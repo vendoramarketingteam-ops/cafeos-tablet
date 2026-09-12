@@ -25,10 +25,7 @@ object SettingsStore {
 
     private var prefs: SharedPreferences? = null
 
-    // Gamified skin is ON by default so the MOBA shop skin is visible on launch
-    // (per request). Fast Mode (disables non-essential motion/glow/sound) and
-    // Classic (plain revert) remain available as one-tap toggles in Settings.
-    private val _uiMode = MutableStateFlow(ThemeMode.GAMIFIED)
+    private val _uiMode = MutableStateFlow(ThemeMode.FAST)
     val uiMode: StateFlow<ThemeMode> = _uiMode.asStateFlow()
 
     private val _soundEnabled = MutableStateFlow(false)
@@ -38,7 +35,7 @@ object SettingsStore {
         if (prefs != null) return
         prefs = context.applicationContext
             .getSharedPreferences(PREFS, Context.MODE_PRIVATE).also { p ->
-            _uiMode.value = parseMode(p.getString(KEY_UI_MODE, ThemeMode.GAMIFIED.name))
+            _uiMode.value = parseMode(p.getString(KEY_UI_MODE, ThemeMode.FAST.name))
             _soundEnabled.value = p.getBoolean(KEY_SOUND, false)
         }
     }
@@ -59,8 +56,8 @@ object SettingsStore {
     fun isGamified(): Boolean = _uiMode.value == ThemeMode.GAMIFIED
 
     private fun parseMode(raw: String?): ThemeMode = try {
-        ThemeMode.valueOf(raw ?: ThemeMode.GAMIFIED.name)
+        ThemeMode.valueOf(raw ?: ThemeMode.FAST.name)
     } catch (_: Exception) {
-        ThemeMode.GAMIFIED
+        ThemeMode.FAST
     }
 }

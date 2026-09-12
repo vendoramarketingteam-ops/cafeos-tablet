@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.CafeTable
 import com.cafeos.tablet.data.TableSession
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
@@ -47,18 +48,15 @@ fun FloorPlanScreen(viewModel: CafeViewModel) {
     val scope = rememberCoroutineScope()
 
     PremiumScreen {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Floor Plan", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
+        PremiumHeader(
+            title = "Floor Plan",
+            subtitle = "See table availability and active sessions",
+            action = {
             IconButton(onClick = { showTableForm = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Table", tint = PosPaper)
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+            }
+        )
 
         if (tables.isEmpty()) {
             Box(

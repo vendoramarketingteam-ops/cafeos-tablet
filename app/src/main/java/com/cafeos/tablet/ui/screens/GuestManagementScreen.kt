@@ -28,6 +28,7 @@ import com.cafeos.tablet.data.CafeTable
 import com.cafeos.tablet.data.Guest
 import com.cafeos.tablet.data.TableSession
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
@@ -54,10 +55,7 @@ fun GuestManagementScreen(viewModel: CafeViewModel) {
     }
 
     PremiumScreen {
-        Text("Guest Management", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
-        Text("Manage guests at occupied tables", style = MaterialTheme.typography.bodyMedium, color = PosMuted, modifier = Modifier.padding(top = 4.dp))
-
-        Spacer(modifier = Modifier.height(16.dp))
+        PremiumHeader("Guest Management", "Manage guests at occupied tables")
 
         if (activeSessions.isEmpty()) {
             Box(

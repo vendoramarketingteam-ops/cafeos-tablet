@@ -120,7 +120,7 @@ fun InventoryProductsTab(viewModel: CafeViewModel) {
     // Mobile-first: single-column cards on portrait phones so product names
     // don't wrap into vertical word stacks; 5-up grid on tablet.
     val isPortraitPhone = LocalConfiguration.current.screenWidthDp < 600
-    val gridColumns = if (isPortraitPhone) GridCells.Fixed(1) else GridCells.Fixed(5)
+    val gridColumns = GridCells.Adaptive(minSize = if (isPortraitPhone) 280.dp else 180.dp)
 
     LazyVerticalGrid(
         columns = gridColumns,
@@ -216,7 +216,7 @@ fun InventoryIngredientsTab(viewModel: CafeViewModel) {
         importMessage?.let { Text(it, color = PosAccent, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = Dimens.space8)) }
         // Mobile-first: single-column cards on portrait phones so ingredient names
         // don't wrap into vertical word stacks; 5-up grid on tablet.
-        val gridColumns = if (isPortraitPhone) GridCells.Fixed(1) else GridCells.Fixed(5)
+        val gridColumns = GridCells.Adaptive(minSize = if (isPortraitPhone) 280.dp else 180.dp)
         LazyVerticalGrid(
             columns = gridColumns,
             modifier = Modifier
@@ -393,7 +393,7 @@ fun InventorySuppliersTab(viewModel: CafeViewModel) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         val isPortraitPhone = LocalConfiguration.current.screenWidthDp < 600
-        val gridColumns = if (isPortraitPhone) GridCells.Fixed(1) else GridCells.Fixed(5)
+        val gridColumns = GridCells.Adaptive(minSize = if (isPortraitPhone) 280.dp else 180.dp)
         LazyVerticalGrid(
             columns = gridColumns,
             modifier = Modifier
@@ -516,7 +516,7 @@ fun InventoryCapacityTab(viewModel: CafeViewModel) {
     }
 
     val isPortraitPhone = LocalConfiguration.current.screenWidthDp < 600
-    val gridColumns = if (isPortraitPhone) GridCells.Fixed(1) else GridCells.Fixed(5)
+    val gridColumns = GridCells.Adaptive(minSize = if (isPortraitPhone) 280.dp else 180.dp)
 
     LazyVerticalGrid(
         columns = gridColumns,
@@ -1126,7 +1126,7 @@ fun IngredientHistoryDialog(
         onDismissRequest = onDismiss,
         title = { Text("${ingredient.name} — Purchase History", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.height(420.dp)) {
+            Column(modifier = Modifier.heightIn(max = 420.dp)) {
                 if (transactions == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = PosAccent)
@@ -1244,7 +1244,7 @@ fun SupplierDetailDialog(
         onDismissRequest = onDismiss,
         title = { Text("Supplier: ${supplier.name}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.height(440.dp)) {
+            Column(modifier = Modifier.heightIn(max = 440.dp)) {
                 if (rows == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = PosAccent)

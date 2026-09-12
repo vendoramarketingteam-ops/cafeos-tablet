@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.*
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.components.rarityByPoints
 import com.cafeos.tablet.ui.theme.*
@@ -44,10 +45,7 @@ fun LoyaltyScreen(viewModel: CafeViewModel) {
     val tabs = listOf("Customers", "Vouchers", "Settings")
 
     PremiumScreen {
-        Text("Loyalty Program", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
-        Text("Manage customers, vouchers, and rewards", style = MaterialTheme.typography.bodySmall, color = PosMuted)
-
-        Spacer(modifier = Modifier.height(Dimens.space16))
+        PremiumHeader("Loyalty Program", "Manage customers, vouchers, and rewards")
 
         ScrollableTabRow(
             selectedTabIndex = selectedTab,
