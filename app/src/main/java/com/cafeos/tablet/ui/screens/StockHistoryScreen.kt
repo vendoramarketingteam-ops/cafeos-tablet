@@ -4,7 +4,9 @@ import com.cafeos.tablet.ui.components.GameCard
 import com.cafeos.tablet.ui.components.Rarity
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -23,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.*
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import java.text.NumberFormat
@@ -55,14 +58,7 @@ fun StockHistoryScreen(viewModel: CafeViewModel) {
     }
 
     PremiumScreen {
-        Text("Stock History", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
-        Text(
-            "Every ingredient movement — purchases in, orders out",
-            style = MaterialTheme.typography.bodySmall,
-            color = PosMuted
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
+        PremiumHeader("Stock History", "Every ingredient movement — purchases in, orders out")
 
         OutlinedTextField(
             value = searchQuery,
@@ -83,7 +79,10 @@ fun StockHistoryScreen(viewModel: CafeViewModel) {
         Spacer(modifier = Modifier.height(12.dp))
 
         val filters = listOf<Pair<String?, String>>(null to "All", "PURCHASE" to "Purchases", "USAGE" to "Used by orders")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.horizontalScroll(rememberScrollState())
+        ) {
             filters.forEach { (type, label) ->
                 FilterChip(
                     selected = filterType == type,

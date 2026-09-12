@@ -14,11 +14,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items as rowItems
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -32,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -101,6 +107,7 @@ fun ItemShopPOSScreen(
         .background(PosCoffee)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
+            val compact = LocalConfiguration.current.screenWidthDp < Dimens.tabletBreakpoint.value
             // —— Zone I: Top HUD ——
             PremiumHeader(
                 title = state.shopName,
@@ -112,26 +119,43 @@ fun ItemShopPOSScreen(
 
             Spacer(modifier = Modifier.height(Dimens.space12))
 
-            // —— Main row: CategoryRail | Grid | Build Path Panel ——
-            // The build-path panel collapses to zero width (AnimatedVisibility +
-            // animateContentSize) when no item is selected, so the grid gets full
-            // real estate. It expands when an item is tapped.
-            Row(modifier = Modifier.weight(1f).animateContentSize()) {
-                // —— Zone B: Category rail ——
-                CategoryRail(
-                    categories = state.categories,
-                    selectedId = state.selectedCategoryId,
-                    onSelect = state.onCategorySelected,
-                    modifier = Modifier.width(200.dp)
-                )
-
-                // —— Zone A + C/D: Grid column ——
+            if (compact) {
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(Dimens.space16)
+                        .padding(horizontal = Dimens.space12)
                 ) {
-                    // Zone A: Mode tabs
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.space8),
+                        contentPadding = PaddingValues(vertical = Dimens.space4),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        rowItems(state.categories, key = { it.id }) { category ->
+                            val selected = category.id == state.selectedCategoryId
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        if (selected) PosGold.copy(alpha = 0.18f) else Color.White,
+                                        RoundedCornerShape(Dimens.radiusXLarge)
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (selected) PosGold else Color(0xFFD8CDBE),
+                                        RoundedCornerShape(Dimens.radiusXLarge)
+                                    )
+                                    .clickable { state.onCategorySelected(category.id) }
+                                    .padding(horizontal = Dimens.space16, vertical = Dimens.space12)
+                            ) {
+                                Text(
+                                    category.name,
+                                    color = if (selected) PosGold else Color(0xFF675C52),
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+
                     ShopModeTabRow(
                         mode = state.shopMode,
                         onModeChange = state.onModeToggled,
@@ -140,7 +164,6 @@ fun ItemShopPOSScreen(
 
                     Spacer(modifier = Modifier.height(Dimens.space12))
 
-                    // Zone C/D: Item grid
                     ShopItemGrid(
                         items = state.gridItems,
                         selectedItemId = state.selectedItemId,
@@ -148,41 +171,99 @@ fun ItemShopPOSScreen(
                         onItemTapped = state.onItemTapped,
                         modifier = Modifier.weight(1f)
                     )
+
+                    AnimatedVisibility(visible = state.selectedItem != null) {
+                        PremiumPanel(title = null) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 220.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                BuildPathHeader(
+                                    enabledNodeCount = state.buildPathNodes.count { it.isIncluded() },
+                                    allIncluded = state.allAddonsIncluded,
+                                    onAddAllTapped = state.onAddAllTapped
+                                )
+                                state.buildPathRoot?.let { root ->
+                                    Spacer(modifier = Modifier.height(Dimens.space8))
+                                    BuildPathTree(
+                                        root = root,
+                                        onNodeToggled = state.onBuildNodeToggled,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                ItemDetailDock(
+                                    baseItem = state.selectedItem,
+                                    activeModifiers = state.activeModifiers,
+                                    perkText = state.perkText,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
                 }
+            } else {
+                Row(modifier = Modifier.weight(1f).animateContentSize()) {
+                    CategoryRail(
+                        categories = state.categories,
+                        selectedId = state.selectedCategoryId,
+                        onSelect = state.onCategorySelected,
+                        modifier = Modifier.width(200.dp)
+                    )
 
-                // —— Zone E/F/G: Build path panel ——
-                // Collapses when no item is selected so the grid gets full width.
-                AnimatedVisibility(visible = state.selectedItem != null) {
-                    PremiumPanel(
+                    Column(
                         modifier = Modifier
-                            .widthIn(min = 280.dp, max = 340.dp)
-                            .fillMaxHeight(),
-                        title = null
+                            .weight(1f)
+                            .padding(Dimens.space16)
                     ) {
-                        BuildPathHeader(
-                            enabledNodeCount = state.buildPathNodes.count { it.isIncluded() },
-                            allIncluded = state.allAddonsIncluded,
-                            onAddAllTapped = state.onAddAllTapped
+                        ShopModeTabRow(
+                            mode = state.shopMode,
+                            onModeChange = state.onModeToggled,
+                            modifier = Modifier.fillMaxWidth()
                         )
-
                         Spacer(modifier = Modifier.height(Dimens.space12))
+                        ShopItemGrid(
+                            items = state.gridItems,
+                            selectedItemId = state.selectedItemId,
+                            selectedQuantities = state.selectedQuantities,
+                            onItemTapped = state.onItemTapped,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
-                        val rootNode = state.buildPathRoot
-                        if (rootNode != null) {
-                            BuildPathTree(
-                                root = rootNode,
-                                onNodeToggled = state.onBuildNodeToggled,
-                                modifier = Modifier.fillMaxWidth()
+                    AnimatedVisibility(visible = state.selectedItem != null) {
+                        PremiumPanel(
+                            modifier = Modifier
+                                .widthIn(min = 280.dp, max = 340.dp)
+                                .fillMaxHeight(),
+                            title = null
+                        ) {
+                            BuildPathHeader(
+                                enabledNodeCount = state.buildPathNodes.count { it.isIncluded() },
+                                allIncluded = state.allAddonsIncluded,
+                                onAddAllTapped = state.onAddAllTapped
                             )
 
                             Spacer(modifier = Modifier.height(Dimens.space12))
 
-                            ItemDetailDock(
-                                baseItem = state.selectedItem,
-                                activeModifiers = state.activeModifiers,
-                                perkText = state.perkText,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            val rootNode = state.buildPathRoot
+                            if (rootNode != null) {
+                                BuildPathTree(
+                                    root = rootNode,
+                                    onNodeToggled = state.onBuildNodeToggled,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                Spacer(modifier = Modifier.height(Dimens.space12))
+
+                                ItemDetailDock(
+                                    baseItem = state.selectedItem,
+                                    activeModifiers = state.activeModifiers,
+                                    perkText = state.perkText,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
@@ -198,7 +279,7 @@ fun ItemShopPOSScreen(
                 quickActions = state.quickActions,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(if (compact) 104.dp else 120.dp)
             )
         }
     }
@@ -321,7 +402,7 @@ private fun ShopItemGrid(
     }
 
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+        columns = GridCells.Adaptive(minSize = 144.dp),
         contentPadding = PaddingValues(Dimens.space8),
         horizontalArrangement = Arrangement.spacedBy(Dimens.space12),
         verticalArrangement = Arrangement.spacedBy(Dimens.space12),

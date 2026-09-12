@@ -497,7 +497,7 @@ fun OrderDetailDialog(order: Order, viewModel: CafeViewModel, onDismiss: () -> U
             }
         },
         text = {
-            Column(modifier = Modifier.height(400.dp)) {
+            Column(modifier = Modifier.heightIn(max = 400.dp)) {
                 LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Dimens.space12)) {
                     item {
                         Column {

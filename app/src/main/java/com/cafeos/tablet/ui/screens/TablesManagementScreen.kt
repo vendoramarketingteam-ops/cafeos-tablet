@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.cafeos.tablet.data.CafeTable
 import com.cafeos.tablet.data.TableSection
 import com.cafeos.tablet.ui.CafeViewModel
+import com.cafeos.tablet.ui.components.PremiumHeader
 import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
@@ -48,12 +49,10 @@ fun TablesManagementScreen(viewModel: CafeViewModel) {
     }
 
     PremiumScreen {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Tables", style = MaterialTheme.typography.headlineMedium, color = PosPaper)
+        PremiumHeader(
+            title = "Tables",
+            subtitle = "Manage seating, capacity, and floor sections",
+            action = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconButton(onClick = { editingSection = null; showSectionForm = true }) {
                     Icon(Icons.Default.Restaurant, contentDescription = "Manage Sections", tint = PosPaper)
@@ -62,9 +61,8 @@ fun TablesManagementScreen(viewModel: CafeViewModel) {
                     Icon(Icons.Default.Add, contentDescription = "Add Table", tint = PosPaper)
                 }
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+            }
+        )
 
         OutlinedTextField(
             value = searchQuery,
@@ -244,7 +242,7 @@ fun TableSectionFormDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (section == null) "New Section" else "Edit Section", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.height(300.dp)) {
+            Column(modifier = Modifier.heightIn(max = 300.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },

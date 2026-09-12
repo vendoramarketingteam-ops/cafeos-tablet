@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -54,6 +55,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
@@ -217,9 +219,14 @@ fun HubScreen(
     var cumulativeDragX by remember { mutableStateOf(0f) }
     var cumulativeDragY by remember { mutableStateOf(0f) }
 
-    val cols = 4
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val cols = when {
+        screenWidthDp < 360 -> 2
+        screenWidthDp < Dimens.tabletBreakpoint.value -> 3
+        else -> 4
+    }
     val cellSizePx = with(density) {
-        val gridWidthDp = 399f - 32f - (cols - 1) * 12  // screenWidth - padding - spacing
+        val gridWidthDp = screenWidthDp.toFloat() - 32f - (cols - 1) * 12
         (gridWidthDp / cols).dp.toPx()
     }
     val dragThreshold = cellSizePx / 2.5f
@@ -476,9 +483,10 @@ fun HomeTileButton(
     ) {
         Box(
             modifier = Modifier
-                .size(if (tile.isLargeTile) 104.dp else 56.dp)
+                .fillMaxWidth()
+                .height(if (tile.isLargeTile) 84.dp else 64.dp)
                 .background(tile.tint, shape = RoundedCornerShape(Dimens.radiusMedium))
-                .padding(if (tile.isLargeTile) Dimens.space8 else 0.dp),
+                .padding(Dimens.space8),
             contentAlignment = Alignment.Center
         ) {
             BadgedBox(

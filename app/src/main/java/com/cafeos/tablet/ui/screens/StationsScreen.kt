@@ -24,7 +24,7 @@ import com.cafeos.tablet.ui.components.PremiumScreen
 import com.cafeos.tablet.ui.theme.*
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun StationsScreen(viewModel: CafeViewModel) {
     val stations by viewModel.stations.collectAsState(initial = emptyList())
@@ -125,7 +125,7 @@ fun StationsScreen(viewModel: CafeViewModel) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun StationFormDialog(station: Station?, onDismiss: () -> Unit, onSave: (Station) -> Unit) {
     var name by remember { mutableStateOf(station?.name ?: "") }
@@ -144,7 +144,10 @@ fun StationFormDialog(station: Station?, onDismiss: () -> Unit, onSave: (Station
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("Type", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     types.forEach { t ->
                         FilterChip(selected = stationType == t, onClick = { stationType = t }, label = { Text(t) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = PosAccentSoft, selectedLabelColor = PosAccent))
                     }
@@ -152,7 +155,10 @@ fun StationFormDialog(station: Station?, onDismiss: () -> Unit, onSave: (Station
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("Icon", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     emojiChoices.forEach { e ->
                         FilterChip(selected = emoji == e, onClick = { emoji = e }, label = { Text(e) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = PosAccentSoft, selectedLabelColor = PosAccent))
                     }
